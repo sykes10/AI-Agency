@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Press Agency</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <h1>Press Agency</h1>
+
+  <form id="create-form">
+    <input type="text" id="topic" placeholder="Topic (e.g. Understanding event loops)" required />
+    <input type="text" id="audience" placeholder="Audience (e.g. Backend engineers)" required />
+    <select id="depth">
+      <option value="deep-dive">Deep dive</option>
+      <option value="overview">Overview</option>
+    </select>
+    <button type="submit">Generate article</button>
+  </form>
+
+  <div class="layout">
+    <div class="panel">
+      <strong>Recent articles</strong>
+      <ul id="recent-list"></ul>
+    </div>
+
+    <div class="panel">
+      <strong>Live events</strong>
+      <span id="current-status" class="status-badge"></span>
+      <div id="event-log"></div>
+    </div>
+
+    <div class="panel">
+      <strong>Artifacts</strong>
+      <div class="tabs" id="stage-tabs">
+        <button data-stage="research">Research</button>
+        <button data-stage="outline">Outline</button>
+        <button data-stage="draft">Draft</button>
+        <button data-stage="technical">Technical</button>
+        <button data-stage="editorial">Editorial</button>
+        <button data-stage="seo">SEO</button>
+        <button data-stage="metadata">Final</button>
+      </div>
+      <div id="stage-content"></div>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
