@@ -9,7 +9,7 @@ export const ResearchReportSchema = z.object({
     z.object({
       title: z.string(),
       url: z.string(),
-      note: z.string().optional(),
+      note: z.string().nullable(),
     })
   ),
   usefulLinks: z.array(z.string()),
@@ -18,8 +18,8 @@ export const ResearchReportSchema = z.object({
     z.object({ concept: z.string(), clarification: z.string() })
   ),
   openQuestions: z.array(z.string()),
-  recentChanges: z.array(z.string()).default([]),
-  commonMistakes: z.array(z.string()).default([]),
+  recentChanges: z.array(z.string()),
+  commonMistakes: z.array(z.string()),
 });
 
 export type ResearchReport = z.infer<typeof ResearchReportSchema>;

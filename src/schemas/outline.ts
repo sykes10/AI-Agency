@@ -10,8 +10,8 @@ export const OutlineSchema = z.object({
     z.object({
       heading: z.string(),
       summary: z.string(),
-      codeExamples: z.array(z.string()).default([]),
-      illustrationIdeas: z.array(z.string()).default([]),
+      codeExamples: z.array(z.string()),
+      illustrationIdeas: z.array(z.string()),
     })
   ),
   takeaways: z.array(z.string()),
