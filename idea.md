@@ -566,6 +566,53 @@ Optional approval after:
 
 ---
 
+## Planned: Idea-to-PR Workflow (v2)
+
+### Overview
+
+Replace the structured `{topic, audience, depth}` intake with a free-text idea, add a mandatory human approval gate before publish, and make publish mean "open a PR on the articles repo" rather than writing files locally.
+
+### Idea Intake
+
+* New `IdeaIntakeAgent`: takes a raw pasted idea, derives `{topic, audience, depth}`.
+* `CreateArticleRequestSchema` gains an `{ idea: string }` variant.
+* Raw idea is stored on the `Article` record for traceability/replay.
+* Web UI: textarea replaces the topic/audience/depth form.
+
+### Approval Gate
+
+* New `ArticleStatus`: `AwaitingApproval`, inserted between `SEOReview` and the final publish step.
+* `runArticleJob` stops at `AwaitingApproval` instead of running straight through to publish.
+* `POST /articles/:id/approve` resumes the job to run the publish step.
+* `POST /articles/:id/reject` sets a terminal `Rejected` status. No PR is created.
+* `POST /articles/:id/iterate` takes feedback text, re-runs from the relevant stage (likely Writing) with the feedback appended as input, clears downstream artifacts (`draft`, `reviews`, `seo`), and returns to `AwaitingApproval`.
+
+### Publish Step (revised)
+
+* Triggered only by Approve — never automatic.
+* Assembles the `.mdx` file (frontmatter + body, same shape as current `Publisher.produceOutput`) using `seo.slug` as the filename.
+* Fixed convention for v2 (no per-article override): one configured target repo, one content path pattern (e.g. `content/posts/<slug>.mdx`), one branch prefix (e.g. `article/<slug>`).
+* Uses the `gh` CLI (relies on the host machine's already-authenticated `gh`) to checkout the target repo, create the branch, commit the file, push, and `gh pr create`.
+* `Published` status is renamed to `PRCreated` — the real publish (merge) happens manually on GitHub afterward.
+* PR URL is stored on the `Article` record and surfaced in the UI once available.
+
+### Config Needed
+
+* Target repo path/URL, content subfolder, branch prefix — env var or config file, fixed convention, no per-article override in v2.
+
+### Web UI Additions
+
+* Idea textarea + submit (replaces structured form).
+* Review screen for `AwaitingApproval`: renders draft/SEO preview with Approve / Reject / Iterate (+ feedback box) actions.
+* After approval, show the PR link once created.
+
+### Open Questions
+
+* Should iterate always restart from Writing, or let the user pick which stage to redo?
+* Should rejected articles be deletable, or archived indefinitely with status `Rejected`?
+
+---
+
 ## Parallel Execution
 
 Run independent tasks simultaneously.
