@@ -1,6 +1,8 @@
 const state = {
   activeArticleId: null,
   activeStage: "research",
+  activeArtifact: null,
+  viewMode: "preview",
   eventSource: null,
 };
 
@@ -13,6 +15,7 @@ const els = {
   eventLog: document.getElementById("event-log"),
   currentStatus: document.getElementById("current-status"),
   stageTabs: document.getElementById("stage-tabs"),
+  viewToggle: document.getElementById("view-toggle"),
   stageContent: document.getElementById("stage-content"),
 };
 
@@ -42,6 +45,8 @@ function appendEventLine(event) {
   els.eventLog.scrollTop = els.eventLog.scrollHeight;
 }
 
+const MARKDOWN_STAGE = "metadata";
+
 async function loadStage(stage) {
   if (!state.activeArticleId) return;
   state.activeStage = stage;
@@ -50,9 +55,32 @@ async function loadStage(stage) {
   }
   try {
     const { artifact } = await fetchJson(`/articles/${state.activeArticleId}/artifact/${stage}`);
-    els.stageContent.textContent = artifact ? JSON.stringify(artifact, null, 2) : "(not produced yet)";
+    state.activeArtifact = artifact;
+    renderStageContent();
   } catch (err) {
+    state.activeArtifact = null;
     els.stageContent.textContent = `Error loading ${stage}: ${err.message}`;
+  }
+}
+
+function renderStageContent() {
+  const artifact = state.activeArtifact;
+  const isMarkdownStage = state.activeStage === MARKDOWN_STAGE && !!artifact?.markdown;
+  els.viewToggle.classList.toggle("hidden", !isMarkdownStage);
+  for (const btn of els.viewToggle.querySelectorAll("button")) {
+    btn.classList.toggle("active", btn.dataset.view === state.viewMode);
+  }
+
+  if (!artifact) {
+    els.stageContent.textContent = "(not produced yet)";
+    return;
+  }
+
+  if (isMarkdownStage && state.viewMode === "preview") {
+    const html = window.DOMPurify.sanitize(window.marked.parse(artifact.markdown));
+    els.stageContent.innerHTML = `<div class="markdown-preview">${html}</div>`;
+  } else {
+    els.stageContent.textContent = JSON.stringify(artifact, null, 2);
   }
 }
 
@@ -95,6 +123,13 @@ function watchArticle(articleId) {
 
 for (const btn of els.stageTabs.querySelectorAll("button")) {
   btn.addEventListener("click", () => loadStage(btn.dataset.stage));
+}
+
+for (const btn of els.viewToggle.querySelectorAll("button")) {
+  btn.addEventListener("click", () => {
+    state.viewMode = btn.dataset.view;
+    renderStageContent();
+  });
 }
 
 els.form.addEventListener("submit", async (e) => {
