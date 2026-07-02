@@ -1,17 +1,24 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { AgentEventInput } from "../../src/schemas/events.js";
 
-const parseMock = vi.fn();
+const generateTextMock = vi.fn();
 
-vi.mock("../../src/llm/anthropicClient.js", () => ({
-  anthropic: { messages: { parse: parseMock } },
-  MODEL: "claude-sonnet-5",
+vi.mock("ai", () => ({
+  generateText: generateTextMock,
+  Output: { object: (opts: unknown) => opts },
+  stepCountIs: (n: number) => n,
+}));
+
+vi.mock("../../src/llm/provider.js", () => ({
+  model: {},
   DEFAULT_MAX_TOKENS: 8192,
+  PROVIDER_NAME: "anthropic",
+  MODEL_ID: "claude-sonnet-5",
 }));
 
 describe("PlanningAgent", () => {
   beforeEach(() => {
-    parseMock.mockReset();
+    generateTextMock.mockReset();
   });
 
   it("produces a validated Outline from a ResearchReport and emits lifecycle events", async () => {
@@ -30,7 +37,7 @@ describe("PlanningAgent", () => {
       takeaways: ["takeaway 1"],
       conclusion: "conclusion",
     };
-    parseMock.mockResolvedValue({ parsed_output: outline });
+    generateTextMock.mockResolvedValue({ output: outline });
 
     const events: AgentEventInput[] = [];
     const result = await agent.run(
@@ -56,14 +63,14 @@ describe("PlanningAgent", () => {
     );
 
     expect(result).toEqual(outline);
-    expect(parseMock).toHaveBeenCalledTimes(1);
+    expect(generateTextMock).toHaveBeenCalledTimes(1);
     expect(events.map((e) => e.type)).toEqual(["AgentStarted", "OutputProduced", "AgentCompleted"]);
   });
 
   it("throws if the model output does not match the outline schema", async () => {
     const { PlanningAgent } = await import("../../src/agents/PlanningAgent.js");
     const agent = new PlanningAgent();
-    parseMock.mockResolvedValue({ parsed_output: { not: "an outline" } });
+    generateTextMock.mockResolvedValue({ output: { not: "an outline" } });
 
     await expect(
       agent.run(

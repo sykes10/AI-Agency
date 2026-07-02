@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
-import { anthropic, MODEL, DEFAULT_MAX_TOKENS } from "./anthropicClient.js";
+import { generateText, Output } from "ai";
+import { model, DEFAULT_MAX_TOKENS } from "./provider.js";
 
 export interface StructuredCallParams<T> {
   system: string;
@@ -10,16 +10,13 @@ export interface StructuredCallParams<T> {
 }
 
 export async function structuredCall<T>(params: StructuredCallParams<T>): Promise<T> {
-  const response = await anthropic.messages.parse({
-    model: MODEL,
-    max_tokens: params.maxTokens ?? DEFAULT_MAX_TOKENS,
+  const { output } = await generateText({
+    model,
     system: params.system,
-    messages: [{ role: "user", content: params.userPrompt }],
-    output_config: { format: zodOutputFormat(params.schema) },
+    prompt: params.userPrompt,
+    maxOutputTokens: params.maxTokens ?? DEFAULT_MAX_TOKENS,
+    output: Output.object({ schema: params.schema }),
   });
 
-  if (response.parsed_output === null) {
-    throw new Error("Model response did not match the expected schema");
-  }
-  return response.parsed_output;
+  return output;
 }
