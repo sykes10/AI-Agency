@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm typecheck *)",
+      "Bash(grep -n 'articleStore.create\\(id, { topic' test/orchestrator/runArticleJob.test.ts)",
+      "Bash(xargs -I{} grep -Hm1 '^description:' {})",
+      "Bash(npx --yes playwright install chromium --dry-run)",
+      "Bash(npm ls *)",
+      "Bash(npx --yes playwright --version)",
+      "Bash(node drive.mjs)",
+      "Bash(curl -sf http://localhost:3000)",
+      "Bash(node -e \"console.log\\(new Date\\(\\).getTimezoneOffset\\(\\)\\)\")",
+      "Bash(tasklist)",
+      "Bash(wmic process *)",
+      "Bash(curl -s -o /tmp/retry_resp.json -w \"%{http_code}\\\\n\" -X POST http://localhost:3333/articles/007bd1a0-39cd-4421-a58b-9a441f433f4c/retry)",
+      "Bash(curl -s http://localhost:3333/articles/007bd1a0-39cd-4421-a58b-9a441f433f4c)",
+      "Bash(curl -s -o /tmp/retry_resp2.json -w \"%{http_code}\\\\n\" -X POST http://localhost:3333/articles/007bd1a0-39cd-4421-a58b-9a441f433f4c/retry)",
+      "Bash(grep -c \"grep\" /dev/null; echo ok)",
+      "Read(//dev/**)"
+    ]
+  }
+}
