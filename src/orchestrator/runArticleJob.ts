@@ -12,10 +12,32 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+const activeJobs = new Set<string>();
+
+export function isJobActive(articleId: string): boolean {
+  return activeJobs.has(articleId);
+}
+
 export async function runArticleJob(
   articleId: string,
   store: ArticleStore = articleStore,
   logger: EventLogger = eventLogger
+): Promise<void> {
+  if (activeJobs.has(articleId)) {
+    throw new Error(`Article job already running: ${articleId}`);
+  }
+  activeJobs.add(articleId);
+  try {
+    await runArticleJobInternal(articleId, store, logger);
+  } finally {
+    activeJobs.delete(articleId);
+  }
+}
+
+async function runArticleJobInternal(
+  articleId: string,
+  store: ArticleStore,
+  logger: EventLogger
 ): Promise<void> {
   const article = await store.load(articleId);
   if (!article) throw new Error(`Article not found: ${articleId}`);

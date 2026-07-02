@@ -43,7 +43,7 @@ async function loadArticleHeader() {
 }
 
 function updateRetryVisibility(status) {
-  els.retryBtn.classList.toggle("hidden", status !== "Failed");
+  els.retryBtn.classList.toggle("hidden", status === "Published");
 }
 
 async function retryArticle() {

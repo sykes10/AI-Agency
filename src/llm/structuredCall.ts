@@ -10,7 +10,7 @@ export interface StructuredCallParams<T> {
 }
 
 export async function structuredCall<T>(params: StructuredCallParams<T>): Promise<T> {
-  const { output } = await generateText({
+  const result = await generateText({
     model,
     system: params.system,
     prompt: params.userPrompt,
@@ -18,5 +18,13 @@ export async function structuredCall<T>(params: StructuredCallParams<T>): Promis
     output: Output.object({ schema: params.schema }),
   });
 
-  return output;
+  if (result.finishReason !== "stop") {
+    throw new Error(
+      `LLM call ended with finishReason "${result.finishReason}" instead of "stop" ` +
+        `(usage: ${JSON.stringify(result.usage)}). No structured output was parsed. ` +
+        `This usually means maxOutputTokens was too low for the response.`
+    );
+  }
+
+  return result.output;
 }

@@ -22,7 +22,7 @@ export const MODEL_ID =
   (PROVIDER_NAME === "openai" ? process.env.OPENAI_MODEL : process.env.ANTHROPIC_MODEL) ??
   DEFAULT_MODEL_ID[PROVIDER_NAME];
 
-export const DEFAULT_MAX_TOKENS = 8192;
+export const DEFAULT_MAX_TOKENS = 16384;
 
 function selectModel(): LanguageModel {
   switch (PROVIDER_NAME) {

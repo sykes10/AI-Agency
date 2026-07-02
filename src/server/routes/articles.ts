@@ -2,7 +2,7 @@ import { Router } from "express";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { articleStore } from "../../storage/ArticleStore.js";
-import { runArticleJob } from "../../orchestrator/runArticleJob.js";
+import { runArticleJob, isJobActive } from "../../orchestrator/runArticleJob.js";
 import { CreateArticleRequestSchema } from "../../schemas/article.js";
 
 export const articlesRouter = Router();
@@ -69,8 +69,12 @@ articlesRouter.post("/articles/:id/retry", async (req, res) => {
     res.status(404).json({ error: "Article not found" });
     return;
   }
-  if (article.status !== "Failed") {
-    res.status(409).json({ error: `Article is not in a Failed state (current: ${article.status})` });
+  if (article.status === "Published") {
+    res.status(409).json({ error: "Article is already Published" });
+    return;
+  }
+  if (isJobActive(article.id)) {
+    res.status(409).json({ error: "Article is currently being processed" });
     return;
   }
 
