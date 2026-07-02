@@ -105,7 +105,7 @@ describe("runArticleJob", () => {
     const { runArticleJob } = await import("../../src/orchestrator/runArticleJob.js");
 
     const id = "article-1";
-    await articleStore.create(id, { topic: "t", audience: "a", depth: "deep-dive" });
+    await articleStore.create(id, { topic: "t", audience: "a", contentType: "blueprint", depth: "deep-dive" });
     await runArticleJob(id);
 
     const article = await articleStore.load(id);
@@ -136,7 +136,7 @@ describe("runArticleJob", () => {
     const { runArticleJob } = await import("../../src/orchestrator/runArticleJob.js");
 
     const id = "article-2";
-    await articleStore.create(id, { topic: "t", audience: "a", depth: "deep-dive" });
+    await articleStore.create(id, { topic: "t", audience: "a", contentType: "blueprint", depth: "deep-dive" });
     await runArticleJob(id);
 
     expect(researchRunMock).toHaveBeenCalledTimes(3); // initial + 2 retries
@@ -175,7 +175,7 @@ describe("runArticleJob", () => {
     const { runArticleJob } = await import("../../src/orchestrator/runArticleJob.js");
 
     const id = "article-3";
-    await articleStore.create(id, { topic: "t", audience: "a", depth: "deep-dive" });
+    await articleStore.create(id, { topic: "t", audience: "a", contentType: "blueprint", depth: "deep-dive" });
     await runArticleJob(id);
 
     let article = await articleStore.load(id);

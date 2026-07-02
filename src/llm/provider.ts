@@ -5,7 +5,12 @@ import type { LanguageModel } from "ai";
 
 export type ProviderName = "anthropic" | "openai";
 
-export const PROVIDER_NAME: ProviderName = (process.env.AI_PROVIDER as ProviderName) || "anthropic";
+const RAW_PROVIDER = process.env.AI_PROVIDER;
+if (RAW_PROVIDER && RAW_PROVIDER !== "anthropic" && RAW_PROVIDER !== "openai") {
+  throw new Error(`Invalid AI_PROVIDER "${RAW_PROVIDER}" — must be "anthropic" or "openai"`);
+}
+
+export const PROVIDER_NAME: ProviderName = (RAW_PROVIDER as ProviderName) || "anthropic";
 
 const DEFAULT_MODEL_ID: Record<ProviderName, string> = {
   anthropic: "claude-sonnet-5",

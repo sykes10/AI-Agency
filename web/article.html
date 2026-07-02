@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Press Agency — Article</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <a href="/" class="back-link">&larr; Back</a>
+
+  <div id="article-header" class="article-header">
+    <h1 id="article-title">Loading…</h1>
+    <div class="article-meta">
+      <span id="article-audience"></span>
+      <span id="article-content-type" class="badge"></span>
+      <span id="current-status" class="badge"></span>
+      <button id="retry-btn" class="hidden">Retry</button>
+    </div>
+  </div>
+
+  <div class="layout">
+    <div class="panel">
+      <strong>Live events</strong>
+      <div id="event-log"></div>
+    </div>
+
+    <div class="panel">
+      <strong>Artifacts</strong>
+      <div class="tabs" id="stage-tabs">
+        <button data-stage="research">Research</button>
+        <button data-stage="outline">Outline</button>
+        <button data-stage="draft">Draft</button>
+        <button data-stage="technical">Technical</button>
+        <button data-stage="editorial">Editorial</button>
+        <button data-stage="seo">SEO</button>
+        <button data-stage="metadata">Final</button>
+      </div>
+      <div class="tabs hidden" id="view-toggle">
+        <button data-view="preview">Preview</button>
+        <button data-view="raw">Raw JSON</button>
+      </div>
+      <div id="stage-content"></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
+  <script src="/common.js"></script>
+  <script src="/article.js"></script>
+</body>
+</html>

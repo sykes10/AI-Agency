@@ -21,9 +21,10 @@ form {
   margin-bottom: 1.5rem;
 }
 
-form input, form select, form button {
+form input, form select, form button, form textarea {
   font-size: 0.9rem;
   padding: 0.4rem 0.6rem;
+  font-family: inherit;
 }
 
 form input[type="text"] {
@@ -31,11 +32,75 @@ form input[type="text"] {
   min-width: 200px;
 }
 
+form textarea {
+  flex: 1 1 100%;
+  min-width: 200px;
+  min-height: 4.5rem;
+  resize: vertical;
+}
+
 .layout {
   display: grid;
-  grid-template-columns: 260px 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 1rem;
   align-items: start;
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 1rem;
+  color: inherit;
+  text-decoration: none;
+  opacity: 0.7;
+}
+
+.back-link:hover {
+  opacity: 1;
+}
+
+.article-header {
+  margin-bottom: 1.5rem;
+}
+
+.article-header h1 {
+  font-size: 1.1rem;
+  margin: 0 0 0.4rem;
+}
+
+.article-meta {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+  opacity: 0.85;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  background: #8882;
+}
+
+#retry-btn {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid #e2544a99;
+  background: #e2544a1a;
+  color: #e2544a;
+  cursor: pointer;
+}
+
+#retry-btn:hover {
+  background: #e2544a33;
+}
+
+#retry-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
 .panel {
@@ -58,18 +123,6 @@ form input[type="text"] {
 }
 
 #recent-list li:hover {
-  background: #8882;
-}
-
-#recent-list li.active {
-  background: #4a90e233;
-}
-
-.status-badge {
-  display: inline-block;
-  padding: 0.1rem 0.5rem;
-  border-radius: 999px;
-  font-size: 0.75rem;
   background: #8882;
 }
 

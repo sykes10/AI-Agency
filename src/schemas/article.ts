@@ -23,12 +23,15 @@ export type ArticleStatus = z.infer<typeof ArticleStatusSchema>;
 
 export const DepthSchema = z.enum(["overview", "deep-dive"]);
 
+export const ContentTypeSchema = z.enum(["pattern", "blueprint"]);
+
 export const ArticleSchema = z.object({
   id: z.string(),
   title: z.string().nullable(),
   status: ArticleStatusSchema,
   topic: z.string(),
   audience: z.string(),
+  contentType: ContentTypeSchema,
   depth: DepthSchema.default("deep-dive"),
   createdAt: z.string(),
   updatedAt: z.string(),
@@ -51,6 +54,7 @@ export type Article = z.infer<typeof ArticleSchema>;
 export const CreateArticleRequestSchema = z.object({
   topic: z.string().min(1),
   audience: z.string().min(1),
+  contentType: ContentTypeSchema,
   depth: DepthSchema.optional(),
 });
 

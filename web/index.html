@@ -10,8 +10,12 @@
   <h1>Press Agency</h1>
 
   <form id="create-form">
-    <input type="text" id="topic" placeholder="Topic (e.g. Understanding event loops)" required />
+    <textarea id="idea" placeholder="Describe your idea (e.g. Understanding event loops in Node.js)" required></textarea>
     <input type="text" id="audience" placeholder="Audience (e.g. Backend engineers)" required />
+    <select id="content-type">
+      <option value="blueprint">Blueprint</option>
+      <option value="pattern">Pattern</option>
+    </select>
     <select id="depth">
       <option value="deep-dive">Deep dive</option>
       <option value="overview">Overview</option>
@@ -19,39 +23,12 @@
     <button type="submit">Generate article</button>
   </form>
 
-  <div class="layout">
-    <div class="panel">
-      <strong>Recent articles</strong>
-      <ul id="recent-list"></ul>
-    </div>
-
-    <div class="panel">
-      <strong>Live events</strong>
-      <span id="current-status" class="status-badge"></span>
-      <div id="event-log"></div>
-    </div>
-
-    <div class="panel">
-      <strong>Artifacts</strong>
-      <div class="tabs" id="stage-tabs">
-        <button data-stage="research">Research</button>
-        <button data-stage="outline">Outline</button>
-        <button data-stage="draft">Draft</button>
-        <button data-stage="technical">Technical</button>
-        <button data-stage="editorial">Editorial</button>
-        <button data-stage="seo">SEO</button>
-        <button data-stage="metadata">Final</button>
-      </div>
-      <div class="tabs hidden" id="view-toggle">
-        <button data-view="preview">Preview</button>
-        <button data-view="raw">Raw JSON</button>
-      </div>
-      <div id="stage-content"></div>
-    </div>
+  <div class="panel">
+    <strong>Recent articles</strong>
+    <ul id="recent-list"></ul>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
-  <script src="/app.js"></script>
+  <script src="/common.js"></script>
+  <script src="/home.js"></script>
 </body>
 </html>

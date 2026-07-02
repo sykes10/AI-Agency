@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/server/index.ts",
+    "dev": "tsx watch src/server/index.ts --port=3333",
     "start": "tsx src/server/index.ts",
     "cli": "tsx src/cli/run-cli.ts",
     "test": "vitest run",

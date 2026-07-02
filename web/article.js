@@ -1,39 +1,64 @@
+const params = new URLSearchParams(window.location.search);
+const articleId = params.get("id");
+
 const state = {
-  activeArticleId: null,
   activeStage: "research",
   activeArtifact: null,
   viewMode: "preview",
-  eventSource: null,
 };
 
 const els = {
-  form: document.getElementById("create-form"),
-  topic: document.getElementById("topic"),
-  audience: document.getElementById("audience"),
-  depth: document.getElementById("depth"),
-  recentList: document.getElementById("recent-list"),
-  eventLog: document.getElementById("event-log"),
+  title: document.getElementById("article-title"),
+  audience: document.getElementById("article-audience"),
+  contentType: document.getElementById("article-content-type"),
   currentStatus: document.getElementById("current-status"),
+  retryBtn: document.getElementById("retry-btn"),
+  eventLog: document.getElementById("event-log"),
   stageTabs: document.getElementById("stage-tabs"),
   viewToggle: document.getElementById("view-toggle"),
   stageContent: document.getElementById("stage-content"),
 };
 
-async function fetchJson(url, options) {
-  const res = await fetch(url, options);
-  if (!res.ok) throw new Error(`${url} -> ${res.status}`);
-  return res.json();
+let eventSource = null;
+
+if (!articleId) {
+  els.title.textContent = "No article selected";
+} else {
+  loadArticleHeader();
+  watchArticle();
+  loadStage(state.activeStage);
 }
 
-async function refreshRecentList() {
-  const articles = await fetchJson("/articles");
-  els.recentList.innerHTML = "";
-  for (const article of articles.slice().reverse()) {
-    const li = document.createElement("li");
-    li.textContent = `${article.title ?? article.topic} (${article.status})`;
-    li.className = article.id === state.activeArticleId ? "active" : "";
-    li.addEventListener("click", () => watchArticle(article.id));
-    els.recentList.appendChild(li);
+async function loadArticleHeader() {
+  try {
+    const article = await fetchJson(`/articles/${articleId}`);
+    els.title.textContent = article.title ?? article.topic;
+    els.audience.textContent = article.audience;
+    els.contentType.textContent = CONTENT_TYPE_LABELS[article.contentType] ?? article.contentType;
+    els.currentStatus.textContent = article.status;
+    updateRetryVisibility(article.status);
+  } catch (err) {
+    els.title.textContent = `Error loading article: ${err.message}`;
+  }
+}
+
+function updateRetryVisibility(status) {
+  els.retryBtn.classList.toggle("hidden", status !== "Failed");
+}
+
+async function retryArticle() {
+  els.retryBtn.disabled = true;
+  els.retryBtn.textContent = "Retrying…";
+  try {
+    await fetchJson(`/articles/${articleId}/retry`, { method: "POST" });
+    els.eventLog.innerHTML = "";
+    watchArticle();
+    await loadArticleHeader();
+  } catch (err) {
+    appendEventLine({ type: `Retry failed: ${err.message}` });
+  } finally {
+    els.retryBtn.disabled = false;
+    els.retryBtn.textContent = "Retry";
   }
 }
 
@@ -48,13 +73,13 @@ function appendEventLine(event) {
 const MARKDOWN_STAGE = "metadata";
 
 async function loadStage(stage) {
-  if (!state.activeArticleId) return;
+  if (!articleId) return;
   state.activeStage = stage;
   for (const btn of els.stageTabs.querySelectorAll("button")) {
     btn.classList.toggle("active", btn.dataset.stage === stage);
   }
   try {
-    const { artifact } = await fetchJson(`/articles/${state.activeArticleId}/artifact/${stage}`);
+    const { artifact } = await fetchJson(`/articles/${articleId}/artifact/${stage}`);
     state.activeArtifact = artifact;
     renderStageContent();
   } catch (err) {
@@ -84,41 +109,32 @@ function renderStageContent() {
   }
 }
 
-function watchArticle(articleId) {
-  state.activeArticleId = articleId;
-  els.eventLog.innerHTML = "";
-  els.currentStatus.textContent = "";
+function watchArticle() {
+  if (!articleId) return;
+  if (eventSource) eventSource.close();
+  eventSource = new EventSource(`/articles/${articleId}/events`);
 
-  if (state.eventSource) {
-    state.eventSource.close();
-  }
-
-  const es = new EventSource(`/articles/${articleId}/events`);
-  state.eventSource = es;
-
-  es.onmessage = (e) => {
+  eventSource.onmessage = (e) => {
     const event = JSON.parse(e.data);
     appendEventLine(event);
 
     if (event.type === "StatusChanged") {
       els.currentStatus.textContent = event.to;
+      updateRetryVisibility(event.to);
     }
     if (event.type === "ArtifactCreated" && event.artifact) {
       const stageKey = event.artifact.replace(/^reviews_/, "");
       if (stageKey === state.activeStage) loadStage(stageKey);
     }
     if (event.type === "Completed" || event.type === "Failed") {
-      es.close();
-      refreshRecentList();
+      eventSource.close();
+      loadArticleHeader();
     }
   };
 
-  es.onerror = () => {
+  eventSource.onerror = () => {
     // EventSource retries automatically; nothing to do here for v1.
   };
-
-  loadStage(state.activeStage);
-  refreshRecentList();
 }
 
 for (const btn of els.stageTabs.querySelectorAll("button")) {
@@ -132,21 +148,4 @@ for (const btn of els.viewToggle.querySelectorAll("button")) {
   });
 }
 
-els.form.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const body = {
-    topic: els.topic.value,
-    audience: els.audience.value,
-    depth: els.depth.value,
-  };
-  const { id } = await fetchJson("/articles", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  els.topic.value = "";
-  els.audience.value = "";
-  watchArticle(id);
-});
-
-refreshRecentList();
+els.retryBtn.addEventListener("click", retryArticle);

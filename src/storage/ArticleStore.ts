@@ -30,6 +30,7 @@ interface ArticleRecord {
   status: ArticleStatus;
   topic: string;
   audience: string;
+  contentType: Article["contentType"];
   depth: Article["depth"];
   createdAt: string;
   updatedAt: string;
@@ -60,6 +61,7 @@ export class ArticleStore {
       status: "Queued",
       topic: req.topic,
       audience: req.audience,
+      contentType: req.contentType,
       depth: req.depth ?? "deep-dive",
       createdAt: now,
       updatedAt: now,
@@ -102,7 +104,9 @@ export class ArticleStore {
     return article;
   }
 
-  async list(): Promise<Array<Pick<Article, "id" | "title" | "status" | "topic" | "createdAt" | "updatedAt">>> {
+  async list(): Promise<
+    Array<Pick<Article, "id" | "title" | "status" | "topic" | "contentType" | "createdAt" | "updatedAt">>
+  > {
     let entries: Array<import("node:fs").Dirent>;
     try {
       entries = await fs.readdir(articlesRoot(), { withFileTypes: true });
@@ -121,6 +125,7 @@ export class ArticleStore {
         title: r.title,
         status: r.status,
         topic: r.topic,
+        contentType: r.contentType,
         createdAt: r.createdAt,
         updatedAt: r.updatedAt,
       }));
