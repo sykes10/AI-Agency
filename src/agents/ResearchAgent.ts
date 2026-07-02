@@ -19,7 +19,7 @@ Your only job is to become an expert on the requested topic before anyone writes
 a single sentence of the article. Research concepts, terminology, official
 documentation, recent changes, community opinions, common mistakes, and edge
 cases using the web_search tool when it is available. Never write paragraphs
-intended for publication -- you only gather and organize raw research material.`;
+intended for publication. You only gather and organize raw research material.`;
 
 const MAX_SEARCH_TURNS = 6;
 

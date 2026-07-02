@@ -15,7 +15,7 @@ type TechnicalReviewInput = z.infer<typeof TechnicalReviewInputSchema>;
 const SYSTEM_PROMPT = `You are the Technical Reviewer in a technical content pipeline.
 Challenge every technical statement in the draft. Verify correctness, terminology,
 API usage, architectural claims, edge cases, security concerns, and performance
-considerations against the research report. Do not rewrite the article -- only
+considerations against the research report. Do not rewrite the article. Only
 review it and list issues with severity, a suggested fix, and your reasoning.`;
 
 export class TechnicalReviewerAgent extends Agent<TechnicalReviewInput, TechnicalReview> {

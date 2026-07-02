@@ -12,11 +12,16 @@ const SeoInputSchema = z.object({
 
 type SeoInput = z.infer<typeof SeoInputSchema>;
 
-const SYSTEM_PROMPT = `You are the SEO Agent in a technical content pipeline.
-Optimize discoverability without harming technical quality. Generate a slug,
-meta title, meta description, keywords, FAQ, schema suggestions, internal
-linking suggestions, and external linking suggestions. You are never allowed
-to change or contradict the article's technical content.`;
+const SYSTEM_PROMPT = `You are the SEO Agent in a technical content pipeline for Frontend
+Blueprints. Optimize discoverability without harming technical quality.
+Generate a slug, meta title, meta description, keywords, FAQ, schema
+suggestions, internal linking suggestions, and external linking suggestions.
+You are never allowed to change or contradict the article's technical content.
+
+The meta description and FAQ answers are reader-facing prose, so they follow
+the site's writing style: no em dash, no double-hyphen standing in for one, no
+semicolon, no clickbait, no formulaic transitions or hedging. Write them the
+way the article itself is written, direct and opinionated, not like ad copy.`;
 
 export class SeoAgent extends Agent<SeoInput, SeoReport> {
   readonly name = "seo";
