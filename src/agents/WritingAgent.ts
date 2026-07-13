@@ -4,8 +4,10 @@ import { ResearchReportSchema } from "../schemas/research.js";
 import { OutlineSchema } from "../schemas/outline.js";
 import { DraftSchema, type Draft } from "../schemas/draft.js";
 import { structuredCall } from "../llm/structuredCall.js";
+import { ArticleBriefSchema, formatArticleBrief } from "../schemas/articleBrief.js";
 
 const WritingInputSchema = z.object({
+  brief: ArticleBriefSchema,
   outline: OutlineSchema,
   research: ResearchReportSchema,
   previousDraft: DraftSchema.optional(),
@@ -15,13 +17,14 @@ const WritingInputSchema = z.object({
 type WritingInput = z.infer<typeof WritingInputSchema>;
 
 const SYSTEM_PROMPT = `You are the Writing Agent in a technical content pipeline, writing for
-Frontend Blueprints. Follow the outline section by section and produce a
+the publication defined in the Article brief. Follow the outline section by section and produce a
 production-grade mental model, not a tutorial. Write like an experienced
 engineer explaining a decision to a peer, not a documentation bot summarizing
-a spec. Never write marketing copy, exaggerated claims, or clickbait.
+a spec. The requested audience in the Article brief controls assumed knowledge.
+Never write marketing copy, exaggerated claims, or clickbait.
 
 Voice:
-- The reader is a competent frontend engineer. Skip the throat-clearing, get to
+- Treat the requested audience as competent. Skip the throat-clearing, get to
   the judgment, and back it with reasoning.
 - Favor concrete nouns and active verbs. "The cache invalidates on mutation"
   beats "Cache invalidation occurs when a mutation is performed."
@@ -48,7 +51,7 @@ Sentence-level rules, no exceptions:
 
 Explain, don't over-explain:
 - Don't restate what a code sample already shows in the surrounding prose.
-- Don't define terms a mid-level frontend engineer already knows.
+- Don't define terms the requested audience can reasonably be expected to know.
 - Go deep on the "why": why this pattern over the obvious alternative, what
   breaks at scale, what the failure mode looks like in production. That depth
   is the point. Recapping the obvious or hedging a claim you already believe
@@ -81,7 +84,7 @@ export class WritingAgent extends Agent<WritingInput, Draft> {
       : "\n\nWrite the complete first Draft.";
     return structuredCall({
       system: SYSTEM_PROMPT,
-      userPrompt: `Outline:\n\n${JSON.stringify(input.outline, null, 2)}\n\nResearch report (for grounding facts, definitions, and examples):\n\n${JSON.stringify(input.research, null, 2)}${iterationContext}`,
+      userPrompt: `${formatArticleBrief(input.brief)}\n\nOutline:\n\n${JSON.stringify(input.outline, null, 2)}\n\nResearch report (for grounding facts, definitions, and examples):\n\n${JSON.stringify(input.research, null, 2)}${iterationContext}`,
       schema: this.outputSchema,
       stage: "writing",
       emit: ctx.emit,

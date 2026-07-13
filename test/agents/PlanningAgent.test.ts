@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { AgentEventInput } from "../../src/schemas/events.js";
+import { buildArticleBrief } from "../../src/schemas/articleBrief.js";
 
 const generateTextMock = vi.fn();
 
@@ -22,6 +23,13 @@ const USAGE = {
   outputTokenDetails: { textTokens: 50, reasoningTokens: 0 },
   totalTokens: 150,
 };
+
+const BRIEF = buildArticleBrief({
+  topic: "event loops",
+  audience: "Backend engineers",
+  contentType: "pattern",
+  depth: "overview",
+});
 
 describe("PlanningAgent", () => {
   beforeEach(() => {
@@ -49,6 +57,7 @@ describe("PlanningAgent", () => {
     const events: AgentEventInput[] = [];
     const result = await agent.run(
       {
+        brief: BRIEF,
         research: {
           topic: "event loops",
           definitions: [],
@@ -71,6 +80,11 @@ describe("PlanningAgent", () => {
 
     expect(result).toEqual(outline);
     expect(generateTextMock).toHaveBeenCalledTimes(1);
+    const prompt = generateTextMock.mock.calls[0]?.[0]?.prompt;
+    expect(prompt).toContain("Requested audience: Backend engineers");
+    expect(prompt).toContain("Content type: pattern");
+    expect(prompt).toContain("1,200–1,800 words");
+    expect(prompt).toContain("context and forces");
     expect(events.map((e) => e.type)).toEqual([
       "AgentStarted",
       "ModelUsage",
@@ -91,6 +105,7 @@ describe("PlanningAgent", () => {
     await expect(
       agent.run(
         {
+          brief: BRIEF,
           research: {
             topic: "t",
             definitions: [],

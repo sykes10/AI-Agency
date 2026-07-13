@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { AgentEventInput } from "../../src/schemas/events.js";
+import { buildArticleBrief } from "../../src/schemas/articleBrief.js";
 
 const generateTextMock = vi.fn();
 
@@ -24,6 +25,12 @@ const USAGE = {
 };
 
 const INPUT = {
+  brief: buildArticleBrief({
+    topic: "topic",
+    audience: "Frontend platform engineers",
+    contentType: "blueprint",
+    depth: "deep-dive",
+  }),
   draft: { title: "Original", subtitle: "Sub", body: "Original body." },
   outline: {
     title: "Original",
@@ -85,6 +92,9 @@ describe("RevisionAgent", () => {
     });
 
     expect(result).toEqual(revisedDraft);
+    const prompt = generateTextMock.mock.calls[0]?.[0]?.prompt;
+    expect(prompt).toContain("Requested audience: Frontend platform engineers");
+    expect(prompt).toContain("Content type: blueprint");
     expect(events.map((event) => event.type)).toEqual([
       "AgentStarted",
       "ModelUsage",

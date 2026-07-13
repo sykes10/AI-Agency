@@ -6,6 +6,7 @@ import { buildPipeline } from "./Orchestrator.js";
 import { assertTransition } from "./stateMachine.js";
 import type { Article, ArticleStatus } from "../schemas/article.js";
 import type { PipelineRunKind } from "../schemas/events.js";
+import { buildArticleBrief } from "../schemas/articleBrief.js";
 
 const MAX_RETRIES = 2;
 const RETRY_BACKOFF_MS = [1000, 4000];
@@ -56,7 +57,8 @@ async function runArticleJobInternal(
   const ctx = makeAgentContext(articleId, logger);
   const runId = randomUUID();
   const runKind = inferPipelineRunKind(article);
-  const pipeline = buildPipeline(store);
+  const brief = buildArticleBrief(article);
+  const pipeline = buildPipeline(store, brief);
 
   for (const stage of pipeline) {
     if (stage.isDone(article)) continue;

@@ -9,6 +9,7 @@ import { editorialReviewerAgent } from "../agents/EditorialReviewerAgent.js";
 import { seoAgent } from "../agents/SeoAgent.js";
 import { publisher } from "../agents/Publisher.js";
 import { revisionAgent } from "../agents/RevisionAgent.js";
+import type { ArticleBrief } from "../schemas/articleBrief.js";
 
 export interface StageDef {
   status: ArticleStatus;
@@ -17,7 +18,7 @@ export interface StageDef {
   run: (article: Article, ctx: AgentContext) => Promise<void>;
 }
 
-export function buildPipeline(store: ArticleStore): StageDef[] {
+export function buildPipeline(store: ArticleStore, brief: ArticleBrief): StageDef[] {
   return [
     {
       status: "Researching",
@@ -25,7 +26,7 @@ export function buildPipeline(store: ArticleStore): StageDef[] {
       isDone: (a) => a.research !== null,
       run: async (a, ctx) => {
         const research = await researchAgent.run(
-          { topic: a.topic, audience: a.audience, depth: a.depth },
+          { brief },
           ctx
         );
         await store.saveResearch(a.id, research);
@@ -38,7 +39,7 @@ export function buildPipeline(store: ArticleStore): StageDef[] {
       agentName: planningAgent.name,
       isDone: (a) => a.outline !== null,
       run: async (a, ctx) => {
-        const outline = await planningAgent.run({ research: a.research! }, ctx);
+        const outline = await planningAgent.run({ brief, research: a.research! }, ctx);
         await store.saveOutline(a.id, outline);
         await store.setTitle(a.id, outline.title);
         a.outline = outline;
@@ -56,7 +57,7 @@ export function buildPipeline(store: ArticleStore): StageDef[] {
           ? a.draftReview.feedback ?? undefined
           : undefined;
         const draft = await writingAgent.run(
-          { outline: a.outline!, research: a.research!, previousDraft, feedback },
+          { brief, outline: a.outline!, research: a.research!, previousDraft, feedback },
           ctx
         );
         await store.saveDraft(a.id, draft);
@@ -75,7 +76,7 @@ export function buildPipeline(store: ArticleStore): StageDef[] {
       isDone: (a) => a.reviews.technical !== null,
       run: async (a, ctx) => {
         const review = await technicalReviewerAgent.run(
-          { draft: a.draft!, research: a.research! },
+          { brief, draft: a.draft!, research: a.research! },
           ctx
         );
         await store.saveTechnicalReview(a.id, review);
@@ -93,7 +94,7 @@ export function buildPipeline(store: ArticleStore): StageDef[] {
       agentName: editorialReviewerAgent.name,
       isDone: (a) => a.reviews.editorial !== null,
       run: async (a, ctx) => {
-        const review = await editorialReviewerAgent.run({ draft: a.draft! }, ctx);
+        const review = await editorialReviewerAgent.run({ brief, draft: a.draft! }, ctx);
         await store.saveEditorialReview(a.id, review);
         a.reviews.editorial = review;
         await ctx.emit({ type: "ReviewGenerated", agent: editorialReviewerAgent.name });
@@ -111,6 +112,7 @@ export function buildPipeline(store: ArticleStore): StageDef[] {
       run: async (a, ctx) => {
         const revisedDraft = await revisionAgent.run(
           {
+            brief,
             draft: a.draft!,
             outline: a.outline!,
             research: a.research!,
@@ -133,7 +135,10 @@ export function buildPipeline(store: ArticleStore): StageDef[] {
       agentName: seoAgent.name,
       isDone: (a) => a.seo !== null,
       run: async (a, ctx) => {
-        const seo = await seoAgent.run({ draft: a.revisedDraft!, outline: a.outline! }, ctx);
+        const seo = await seoAgent.run(
+          { brief, draft: a.revisedDraft!, outline: a.outline! },
+          ctx
+        );
         await store.saveSeo(a.id, seo);
         a.seo = seo;
         await ctx.emit({ type: "ArtifactCreated", agent: seoAgent.name, artifact: "seo" });

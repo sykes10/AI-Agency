@@ -6,11 +6,13 @@ import { modelFor, MAX_OUTPUT_TOKENS } from "../llm/provider.js";
 import { structuredCall } from "../llm/structuredCall.js";
 import { getWebSearchTool } from "../llm/getWebSearchTool.js";
 import { emitModelUsage } from "../llm/usage.js";
+import {
+  ArticleBriefSchema,
+  formatArticleBrief,
+} from "../schemas/articleBrief.js";
 
 const ResearchInputSchema = z.object({
-  topic: z.string(),
-  audience: z.string(),
-  depth: z.enum(["overview", "deep-dive"]),
+  brief: ArticleBriefSchema,
 });
 
 type ResearchInput = z.infer<typeof ResearchInputSchema>;
@@ -35,7 +37,9 @@ export class ResearchAgent extends Agent<ResearchInput, ResearchReport> {
     const result = await generateText({
       model: modelFor("research"),
       system: SYSTEM_PROMPT,
-      prompt: `Research the topic "${input.topic}" for an audience of "${input.audience}" at a "${input.depth}" depth. ${
+      prompt: `${formatArticleBrief(input.brief)}
+
+Research this topic for the requested audience, content type, and depth. ${
         webSearchTool
           ? "Use web search to find"
           : "Draw on your own knowledge to cover"
@@ -53,7 +57,7 @@ export class ResearchAgent extends Agent<ResearchInput, ResearchReport> {
 
     return structuredCall({
       system: `${SYSTEM_PROMPT}\n\nYou have already completed your research (see below). Now synthesize everything you found into the final Research Report. Do not perform any more searches.`,
-      userPrompt: `Research notes so far:\n\n${result.text}\n\nProduce the final Research Report for topic "${input.topic}".`,
+      userPrompt: `${formatArticleBrief(input.brief)}\n\nResearch notes so far:\n\n${result.text}\n\nProduce the final Research Report for the Article brief.`,
       schema: this.outputSchema,
       stage: "research",
       emit: ctx.emit,

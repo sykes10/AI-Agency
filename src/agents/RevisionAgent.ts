@@ -6,8 +6,10 @@ import { ResearchReportSchema } from "../schemas/research.js";
 import { TechnicalReviewSchema, EditorialReviewSchema } from "../schemas/reviews.js";
 import { RevisedDraftSchema, type RevisedDraft } from "../schemas/revision.js";
 import { structuredCall } from "../llm/structuredCall.js";
+import { ArticleBriefSchema, formatArticleBrief } from "../schemas/articleBrief.js";
 
 const RevisionInputSchema = z.object({
+  brief: ArticleBriefSchema,
   draft: DraftSchema,
   outline: OutlineSchema,
   research: ResearchReportSchema,
@@ -18,9 +20,10 @@ const RevisionInputSchema = z.object({
 type RevisionInput = z.infer<typeof RevisionInputSchema>;
 
 const SYSTEM_PROMPT = `You are the Revision Agent in a technical content pipeline for
-Frontend Blueprints. Apply the Technical Review and Editorial Review to the
+the publication defined in the Article brief. Apply the Technical Review and Editorial Review to the
 Draft in one revision pass. Preserve the article's argument, structure, voice,
-and technically correct content.
+and technically correct content. Preserve alignment with the requested audience,
+content type, depth, target length, and publication profile in the Article brief.
 
 Exercise judgment. Apply a finding when it improves correctness or readability.
 Reject a finding when it is incorrect, conflicts with stronger evidence, or
@@ -65,7 +68,7 @@ export class RevisionAgent extends Agent<RevisionInput, RevisedDraft> {
   protected async produceOutput(input: RevisionInput, ctx: AgentContext): Promise<unknown> {
     const result = await structuredCall({
       system: SYSTEM_PROMPT,
-      userPrompt: `Original Draft:\n\n${JSON.stringify(input.draft, null, 2)}\n\nArticle Outline:\n\n${JSON.stringify(input.outline, null, 2)}\n\nResearch Report:\n\n${JSON.stringify(input.research, null, 2)}\n\nTechnical Review (issues are indexed in array order):\n\n${JSON.stringify(input.technicalReview, null, 2)}\n\nEditorial Review (suggestions are indexed in array order):\n\n${JSON.stringify(input.editorialReview, null, 2)}\n\nProduce the Revised Draft and one resolution per review finding.`,
+      userPrompt: `${formatArticleBrief(input.brief)}\n\nOriginal Draft:\n\n${JSON.stringify(input.draft, null, 2)}\n\nArticle Outline:\n\n${JSON.stringify(input.outline, null, 2)}\n\nResearch Report:\n\n${JSON.stringify(input.research, null, 2)}\n\nTechnical Review (issues are indexed in array order):\n\n${JSON.stringify(input.technicalReview, null, 2)}\n\nEditorial Review (suggestions are indexed in array order):\n\n${JSON.stringify(input.editorialReview, null, 2)}\n\nProduce the Revised Draft and one resolution per review finding while preserving the Article brief.`,
       schema: this.outputSchema,
       stage: "revision",
       emit: ctx.emit,

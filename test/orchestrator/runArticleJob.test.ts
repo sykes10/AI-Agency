@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { buildArticleBrief } from "../../src/schemas/articleBrief.js";
 
 const researchRunMock = vi.fn();
 const planningRunMock = vi.fn();
@@ -72,6 +73,18 @@ const SEO = {
   internalLinkingSuggestions: [],
   externalLinkingSuggestions: [],
 };
+const BLUEPRINT_BRIEF = buildArticleBrief({
+  topic: "t",
+  audience: "a",
+  contentType: "blueprint",
+  depth: "deep-dive",
+});
+const PATTERN_BRIEF = buildArticleBrief({
+  topic: "t",
+  audience: "a",
+  contentType: "pattern",
+  depth: "overview",
+});
 
 let tmpDir: string;
 let originalCwd: string;
@@ -127,8 +140,32 @@ describe("runArticleJob", () => {
     expect(article?.title).toBe("Title");
     expect(researchRunMock).toHaveBeenCalledTimes(1);
     expect(revisionRunMock).toHaveBeenCalledTimes(1);
+    expect(researchRunMock).toHaveBeenCalledWith({ brief: BLUEPRINT_BRIEF }, expect.anything());
+    expect(planningRunMock).toHaveBeenCalledWith(
+      { brief: BLUEPRINT_BRIEF, research: RESEARCH },
+      expect.anything()
+    );
+    expect(technicalRunMock).toHaveBeenCalledWith(
+      { brief: BLUEPRINT_BRIEF, draft: DRAFT, research: RESEARCH },
+      expect.anything()
+    );
+    expect(editorialRunMock).toHaveBeenCalledWith(
+      { brief: BLUEPRINT_BRIEF, draft: DRAFT },
+      expect.anything()
+    );
+    expect(revisionRunMock).toHaveBeenCalledWith(
+      {
+        brief: BLUEPRINT_BRIEF,
+        draft: DRAFT,
+        outline: OUTLINE,
+        research: RESEARCH,
+        technicalReview: TECH_REVIEW,
+        editorialReview: EDIT_REVIEW,
+      },
+      expect.anything()
+    );
     expect(seoRunMock).toHaveBeenCalledWith(
-      { draft: REVISED_DRAFT, outline: OUTLINE },
+      { brief: BLUEPRINT_BRIEF, draft: REVISED_DRAFT, outline: OUTLINE },
       expect.anything()
     );
     expect(publisherRunMock).toHaveBeenCalledWith(
@@ -252,6 +289,7 @@ describe("runArticleJob", () => {
     expect(planningRunMock).toHaveBeenCalledTimes(1);
     expect(writingRunMock).toHaveBeenLastCalledWith(
       {
+        brief: PATTERN_BRIEF,
         outline: OUTLINE,
         research: RESEARCH,
         previousDraft: DRAFT,
