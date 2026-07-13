@@ -6,12 +6,15 @@ import { TechnicalReviewSchema, EditorialReviewSchema } from "./reviews.js";
 import { SeoReportSchema } from "./seo.js";
 import { PublishedMetadataSchema } from "./metadata.js";
 import { RevisedDraftSchema } from "./revision.js";
+import { DraftReviewSchema } from "./draftReview.js";
 
 export const ArticleStatusSchema = z.enum([
   "Queued",
   "Researching",
   "Planning",
   "Writing",
+  "AwaitingDraftReview",
+  "Rejected",
   "TechnicalReview",
   "EditorialReview",
   "Revising",
@@ -33,13 +36,14 @@ export const ArticleSchema = z.object({
   status: ArticleStatusSchema,
   topic: z.string(),
   audience: z.string(),
-  contentType: ContentTypeSchema,
+  contentType: ContentTypeSchema.default("pattern"),
   depth: DepthSchema.default("deep-dive"),
   createdAt: z.string(),
   updatedAt: z.string(),
   research: ResearchReportSchema.nullable().default(null),
   outline: OutlineSchema.nullable().default(null),
   draft: DraftSchema.nullable().default(null),
+  draftReview: DraftReviewSchema.nullable().default(null),
   reviews: z
     .object({
       technical: TechnicalReviewSchema.nullable().default(null),
