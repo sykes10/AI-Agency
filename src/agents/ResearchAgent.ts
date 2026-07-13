@@ -2,9 +2,10 @@ import { z } from "zod";
 import { generateText, stepCountIs } from "ai";
 import { Agent, type AgentContext } from "./Agent.js";
 import { ResearchReportSchema, type ResearchReport } from "../schemas/research.js";
-import { modelFor, DEFAULT_MAX_TOKENS } from "../llm/provider.js";
+import { modelFor, MAX_OUTPUT_TOKENS } from "../llm/provider.js";
 import { structuredCall } from "../llm/structuredCall.js";
 import { getWebSearchTool } from "../llm/getWebSearchTool.js";
+import { emitModelUsage } from "../llm/usage.js";
 
 const ResearchInputSchema = z.object({
   topic: z.string(),
@@ -41,25 +42,32 @@ export class ResearchAgent extends Agent<ResearchInput, ResearchReport> {
       } definitions, official documentation, recent changes, community opinions, common mistakes, and edge cases. When you have gathered enough material, summarize what you found in plain text.`,
       tools: webSearchTool ? { web_search: webSearchTool } : undefined,
       stopWhen: stepCountIs(MAX_SEARCH_TURNS),
-      maxOutputTokens: DEFAULT_MAX_TOKENS,
+      maxOutputTokens: MAX_OUTPUT_TOKENS.research,
     });
 
-    await this.emitToolEvents(result.content, ctx);
+    const webSearchCalls = await this.emitToolEvents(result.content, ctx);
+    await emitModelUsage(
+      { stage: "research", usage: result.usage, webSearchCalls },
+      ctx.emit
+    );
 
     return structuredCall({
       system: `${SYSTEM_PROMPT}\n\nYou have already completed your research (see below). Now synthesize everything you found into the final Research Report. Do not perform any more searches.`,
       userPrompt: `Research notes so far:\n\n${result.text}\n\nProduce the final Research Report for topic "${input.topic}".`,
       schema: this.outputSchema,
       stage: "research",
+      emit: ctx.emit,
     });
   }
 
   private async emitToolEvents(
     content: Awaited<ReturnType<typeof generateText>>["content"],
     ctx: AgentContext
-  ): Promise<void> {
+  ): Promise<number> {
+    let webSearchCalls = 0;
     for (const part of content) {
       if (part.type === "tool-call" && part.toolName === "web_search") {
+        webSearchCalls += 1;
         await ctx.emit({
           type: "ToolRequested",
           agent: this.name,
@@ -90,6 +98,7 @@ export class ResearchAgent extends Agent<ResearchInput, ResearchReport> {
         });
       }
     }
+    return webSearchCalls;
   }
 }
 

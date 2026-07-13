@@ -62,13 +62,13 @@ export class RevisionAgent extends Agent<RevisionInput, RevisedDraft> {
   readonly inputSchema = RevisionInputSchema;
   readonly outputSchema = RevisedDraftSchema;
 
-  protected async produceOutput(input: RevisionInput, _ctx: AgentContext): Promise<unknown> {
+  protected async produceOutput(input: RevisionInput, ctx: AgentContext): Promise<unknown> {
     const result = await structuredCall({
       system: SYSTEM_PROMPT,
       userPrompt: `Original Draft:\n\n${JSON.stringify(input.draft, null, 2)}\n\nArticle Outline:\n\n${JSON.stringify(input.outline, null, 2)}\n\nResearch Report:\n\n${JSON.stringify(input.research, null, 2)}\n\nTechnical Review (issues are indexed in array order):\n\n${JSON.stringify(input.technicalReview, null, 2)}\n\nEditorial Review (suggestions are indexed in array order):\n\n${JSON.stringify(input.editorialReview, null, 2)}\n\nProduce the Revised Draft and one resolution per review finding.`,
       schema: this.outputSchema,
       stage: "revision",
-      maxTokens: 16384,
+      emit: ctx.emit,
     });
 
     assertResolutionCoverage(result, input);

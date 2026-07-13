@@ -21,6 +21,16 @@ const DEFAULT_MODEL_IDS: Record<ModelStage, string> = {
   seo: "gpt-5.6-luna",
 };
 
+export const MAX_OUTPUT_TOKENS: Record<ModelStage, number> = {
+  research: 16_384,
+  planning: 8_192,
+  writing: 32_768,
+  technicalReview: 16_384,
+  editorialReview: 16_384,
+  revision: 32_768,
+  seo: 8_192,
+};
+
 const STAGE_ENV_KEYS: Record<ModelStage, string> = {
   research: "OPENAI_MODEL_RESEARCH",
   planning: "OPENAI_MODEL_PLANNING",
@@ -50,5 +60,3 @@ export function modelFor(stage: ModelStage): LanguageModel {
   models.set(stage, model);
   return model;
 }
-
-export const DEFAULT_MAX_TOKENS = 16384;

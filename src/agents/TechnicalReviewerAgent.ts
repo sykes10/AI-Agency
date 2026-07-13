@@ -23,12 +23,13 @@ export class TechnicalReviewerAgent extends Agent<TechnicalReviewInput, Technica
   readonly inputSchema = TechnicalReviewInputSchema;
   readonly outputSchema = TechnicalReviewSchema;
 
-  protected async produceOutput(input: TechnicalReviewInput, _ctx: AgentContext): Promise<unknown> {
+  protected async produceOutput(input: TechnicalReviewInput, ctx: AgentContext): Promise<unknown> {
     return structuredCall({
       system: SYSTEM_PROMPT,
       userPrompt: `Draft:\n\n${JSON.stringify(input.draft, null, 2)}\n\nResearch report:\n\n${JSON.stringify(input.research, null, 2)}\n\nReview the draft for technical correctness.`,
       schema: this.outputSchema,
       stage: "technicalReview",
+      emit: ctx.emit,
     });
   }
 }

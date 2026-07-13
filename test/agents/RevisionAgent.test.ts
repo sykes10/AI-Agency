@@ -11,8 +11,17 @@ vi.mock("ai", () => ({
 
 vi.mock("../../src/llm/provider.js", () => ({
   modelFor: () => ({}),
-  DEFAULT_MAX_TOKENS: 8192,
+  MODEL_IDS: { revision: "gpt-5.6-sol" },
+  MAX_OUTPUT_TOKENS: { revision: 32768 },
 }));
+
+const USAGE = {
+  inputTokens: 100,
+  inputTokenDetails: { noCacheTokens: 100, cacheReadTokens: 0, cacheWriteTokens: 0 },
+  outputTokens: 50,
+  outputTokenDetails: { textTokens: 45, reasoningTokens: 5 },
+  totalTokens: 150,
+};
 
 const INPUT = {
   draft: { title: "Original", subtitle: "Sub", body: "Original body." },
@@ -64,7 +73,7 @@ describe("RevisionAgent", () => {
         { source: "editorial", findingIndex: 0, decision: "applied", reason: "Tightened paragraph 1." },
       ],
     };
-    generateTextMock.mockResolvedValue({ output: revisedDraft, finishReason: "stop", usage: {} });
+    generateTextMock.mockResolvedValue({ output: revisedDraft, finishReason: "stop", usage: USAGE });
 
     const { RevisionAgent } = await import("../../src/agents/RevisionAgent.js");
     const events: AgentEventInput[] = [];
@@ -78,6 +87,7 @@ describe("RevisionAgent", () => {
     expect(result).toEqual(revisedDraft);
     expect(events.map((event) => event.type)).toEqual([
       "AgentStarted",
+      "ModelUsage",
       "OutputProduced",
       "AgentCompleted",
     ]);
@@ -94,7 +104,7 @@ describe("RevisionAgent", () => {
         ],
       },
       finishReason: "stop",
-      usage: {},
+      usage: USAGE,
     });
 
     const { RevisionAgent } = await import("../../src/agents/RevisionAgent.js");

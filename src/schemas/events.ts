@@ -2,6 +2,16 @@ import { z } from "zod";
 import { ArticleStatusSchema } from "./article.js";
 import { DraftReviewActionSchema } from "./draftReview.js";
 
+const ModelStageSchema = z.enum([
+  "research",
+  "planning",
+  "writing",
+  "technicalReview",
+  "editorialReview",
+  "revision",
+  "seo",
+]);
+
 export const EventSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("AgentStarted"), agent: z.string(), ts: z.string() }),
   z.object({ type: z.literal("ThinkingStarted"), agent: z.string(), ts: z.string() }),
@@ -35,6 +45,19 @@ export const EventSchema = z.discriminatedUnion("type", [
   }),
   z.object({ type: z.literal("AgentCompleted"), agent: z.string(), ts: z.string() }),
   z.object({ type: z.literal("ReviewGenerated"), agent: z.string(), ts: z.string() }),
+  z.object({
+    type: z.literal("ModelUsage"),
+    stage: ModelStageSchema,
+    model: z.string(),
+    inputTokens: z.number().int().nonnegative(),
+    outputTokens: z.number().int().nonnegative(),
+    reasoningTokens: z.number().int().nonnegative(),
+    cacheReadTokens: z.number().int().nonnegative(),
+    cacheWriteTokens: z.number().int().nonnegative(),
+    webSearchCalls: z.number().int().nonnegative(),
+    estimatedCostUsd: z.number().nonnegative().nullable(),
+    ts: z.string(),
+  }),
   z.object({
     type: z.literal("DraftReviewRequested"),
     iteration: z.number().int().nonnegative(),

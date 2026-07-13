@@ -43,12 +43,13 @@ export class EditorialReviewerAgent extends Agent<EditorialReviewInput, Editoria
   readonly inputSchema = EditorialReviewInputSchema;
   readonly outputSchema = EditorialReviewSchema;
 
-  protected async produceOutput(input: EditorialReviewInput, _ctx: AgentContext): Promise<unknown> {
+  protected async produceOutput(input: EditorialReviewInput, ctx: AgentContext): Promise<unknown> {
     return structuredCall({
       system: SYSTEM_PROMPT,
       userPrompt: `Draft:\n\n${JSON.stringify(input.draft, null, 2)}\n\nReview the draft for readability.`,
       schema: this.outputSchema,
       stage: "editorialReview",
+      emit: ctx.emit,
     });
   }
 }

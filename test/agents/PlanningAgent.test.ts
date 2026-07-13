@@ -11,8 +11,17 @@ vi.mock("ai", () => ({
 
 vi.mock("../../src/llm/provider.js", () => ({
   modelFor: () => ({}),
-  DEFAULT_MAX_TOKENS: 8192,
+  MODEL_IDS: { planning: "gpt-5.6-luna" },
+  MAX_OUTPUT_TOKENS: { planning: 8192 },
 }));
+
+const USAGE = {
+  inputTokens: 100,
+  inputTokenDetails: { noCacheTokens: 100, cacheReadTokens: 0, cacheWriteTokens: 0 },
+  outputTokens: 50,
+  outputTokenDetails: { textTokens: 50, reasoningTokens: 0 },
+  totalTokens: 150,
+};
 
 describe("PlanningAgent", () => {
   beforeEach(() => {
@@ -35,7 +44,7 @@ describe("PlanningAgent", () => {
       takeaways: ["takeaway 1"],
       conclusion: "conclusion",
     };
-    generateTextMock.mockResolvedValue({ output: outline, finishReason: "stop", usage: {} });
+    generateTextMock.mockResolvedValue({ output: outline, finishReason: "stop", usage: USAGE });
 
     const events: AgentEventInput[] = [];
     const result = await agent.run(
@@ -62,7 +71,12 @@ describe("PlanningAgent", () => {
 
     expect(result).toEqual(outline);
     expect(generateTextMock).toHaveBeenCalledTimes(1);
-    expect(events.map((e) => e.type)).toEqual(["AgentStarted", "OutputProduced", "AgentCompleted"]);
+    expect(events.map((e) => e.type)).toEqual([
+      "AgentStarted",
+      "ModelUsage",
+      "OutputProduced",
+      "AgentCompleted",
+    ]);
   });
 
   it("throws if the model output does not match the outline schema", async () => {
@@ -71,7 +85,7 @@ describe("PlanningAgent", () => {
     generateTextMock.mockResolvedValue({
       output: { not: "an outline" },
       finishReason: "stop",
-      usage: {},
+      usage: USAGE,
     });
 
     await expect(

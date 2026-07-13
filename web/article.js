@@ -23,11 +23,12 @@ const STATUS_LABELS = {
   EditorialReview: "Editorial review", SEOReview: "SEO review", Rejected: "Rejected",
 };
 
-const state = { article: null, activeStage: "research", activeArtifact: null, viewMode: "preview" };
+const state = { article: null, usage: null, activeStage: "research", activeArtifact: null, viewMode: "preview" };
 let eventSource = null;
 const els = {
   title: document.getElementById("article-title"), topic: document.getElementById("article-topic"),
   audience: document.getElementById("article-audience"), contentType: document.getElementById("article-content-type"),
+  cost: document.getElementById("article-cost"),
   status: document.getElementById("current-status"), nav: document.getElementById("stage-nav"),
   stageContent: document.getElementById("stage-content"), artifactTitle: document.getElementById("artifact-title"),
   artifactKicker: document.getElementById("artifact-kicker"), iterationBadge: document.getElementById("iteration-badge"),
@@ -95,6 +96,12 @@ function renderHeader() {
   els.topic.textContent = article.title ? article.topic : "The title will appear after planning.";
   els.audience.textContent = article.audience;
   els.contentType.textContent = CONTENT_TYPE_LABELS[article.contentType] ?? article.contentType;
+  els.cost.classList.toggle("hidden", !state.usage?.calls);
+  if (state.usage?.calls) {
+    const qualifier = state.usage.fullyPriced ? "estimated" : "partially estimated";
+    els.cost.textContent = `$${state.usage.estimatedCostUsd.toFixed(3)} ${qualifier}`;
+    els.cost.title = `${state.usage.calls} model calls · ${state.usage.inputTokens.toLocaleString()} input tokens · ${state.usage.outputTokens.toLocaleString()} output tokens`;
+  }
   const group = statusGroup(article.status);
   els.status.className = `status-pill status-${group}`;
   els.status.innerHTML = `<i></i>${STATUS_LABELS[article.status] ?? article.status}`;
@@ -197,7 +204,10 @@ async function loadStage(stage) {
 }
 
 async function loadArticle({ followStatus = false } = {}) {
-  state.article = await fetchJson(`/articles/${articleId}`);
+  [state.article, state.usage] = await Promise.all([
+    fetchJson(`/articles/${articleId}`),
+    fetchJson(`/articles/${articleId}/usage`),
+  ]);
   const suggestedStage = STATUS_STAGE[state.article.status] ?? "research";
   if (followStatus || !artifactExists(state.activeStage)) state.activeStage = suggestedStage;
   renderHeader();
@@ -208,7 +218,7 @@ function appendEvent(event) {
   const row = document.createElement("div");
   row.className = "event-row";
   const time = event.ts ? new Date(event.ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "";
-  row.innerHTML = `<span class="event-dot"></span><div><strong>${escapeHtml(event.type.replace(/([a-z])([A-Z])/g, "$1 $2"))}</strong><small>${escapeHtml(event.agent ?? event.action ?? "Pipeline")}</small></div><time>${time}</time>`;
+  row.innerHTML = `<span class="event-dot"></span><div><strong>${escapeHtml(event.type.replace(/([a-z])([A-Z])/g, "$1 $2"))}</strong><small>${escapeHtml(event.agent ?? event.action ?? event.stage ?? "Pipeline")}</small></div><time>${time}</time>`;
   els.eventLog.appendChild(row);
   els.eventLog.scrollTop = els.eventLog.scrollHeight;
 }
@@ -222,7 +232,7 @@ function watchArticle(since = Date.now()) {
     const event = JSON.parse(message.data);
     appendEvent(event);
     const isLiveEvent = !event.ts || new Date(event.ts).getTime() >= watchingSince;
-    if (isLiveEvent && ["StatusChanged", "ArtifactCreated", "DraftReviewRequested", "Completed", "Failed"].includes(event.type)) {
+    if (isLiveEvent && ["StatusChanged", "ArtifactCreated", "DraftReviewRequested", "ModelUsage", "Completed", "Failed"].includes(event.type)) {
       await loadArticle({ followStatus: state.article?.status !== "AwaitingDraftReview" });
     }
     if (isLiveEvent && ["Completed", "Failed"].includes(event.type)) eventSource.close();

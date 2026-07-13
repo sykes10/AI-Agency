@@ -22,12 +22,13 @@ export class PlanningAgent extends Agent<PlanningInput, Outline> {
   readonly inputSchema = PlanningInputSchema;
   readonly outputSchema = OutlineSchema;
 
-  protected async produceOutput(input: PlanningInput, _ctx: AgentContext): Promise<unknown> {
+  protected async produceOutput(input: PlanningInput, ctx: AgentContext): Promise<unknown> {
     return structuredCall({
       system: SYSTEM_PROMPT,
       userPrompt: `Research report:\n\n${JSON.stringify(input.research, null, 2)}\n\nProduce the article outline.`,
       schema: this.outputSchema,
       stage: "planning",
+      emit: ctx.emit,
     });
   }
 }
