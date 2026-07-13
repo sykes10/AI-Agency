@@ -41,6 +41,38 @@
           </div>
         </header>
 
+        <details id="cost-breakdown" class="cost-breakdown hidden">
+          <summary>
+            <span>
+              <strong>Cost breakdown</strong>
+              <small id="cost-breakdown-meta"></small>
+            </span>
+            <span class="cost-disclosure-label">View details</span>
+          </summary>
+          <div class="cost-table-wrap">
+            <table class="cost-table">
+              <thead>
+                <tr>
+                  <th scope="col">Run</th>
+                  <th scope="col">Stage</th>
+                  <th scope="col">Try</th>
+                  <th scope="col">Model</th>
+                  <th scope="col">Calls</th>
+                  <th scope="col">Input</th>
+                  <th scope="col">Cache read</th>
+                  <th scope="col">Cache write</th>
+                  <th scope="col">Output</th>
+                  <th scope="col">Reasoning</th>
+                  <th scope="col">Searches</th>
+                  <th scope="col">Cost</th>
+                </tr>
+              </thead>
+              <tbody id="cost-breakdown-rows"></tbody>
+            </table>
+          </div>
+          <p class="cost-note">Estimates use the pricing configured when each call was recorded. An asterisk marks incomplete pricing.</p>
+        </details>
+
         <section id="review-banner" class="review-banner hidden">
           <div>
             <p class="eyebrow">Your review</p>

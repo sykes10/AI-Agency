@@ -23,12 +23,26 @@ const STATUS_LABELS = {
   EditorialReview: "Editorial review", SEOReview: "SEO review", Rejected: "Rejected",
 };
 
+const USAGE_STAGE_LABELS = {
+  research: "Research", planning: "Planning", writing: "Writing",
+  technicalReview: "Technical review", editorialReview: "Editorial review",
+  revision: "Revision", seo: "SEO",
+};
+
+const RUN_KIND_LABELS = {
+  initial: "Initial", continuation: "Review continuation", iteration: "Draft iteration",
+  retry: "Retry", legacy: "Historical",
+};
+
 const state = { article: null, usage: null, activeStage: "research", activeArtifact: null, viewMode: "preview" };
 let eventSource = null;
 const els = {
   title: document.getElementById("article-title"), topic: document.getElementById("article-topic"),
   audience: document.getElementById("article-audience"), contentType: document.getElementById("article-content-type"),
   cost: document.getElementById("article-cost"),
+  costBreakdown: document.getElementById("cost-breakdown"),
+  costBreakdownMeta: document.getElementById("cost-breakdown-meta"),
+  costBreakdownRows: document.getElementById("cost-breakdown-rows"),
   status: document.getElementById("current-status"), nav: document.getElementById("stage-nav"),
   stageContent: document.getElementById("stage-content"), artifactTitle: document.getElementById("artifact-title"),
   artifactKicker: document.getElementById("artifact-kicker"), iterationBadge: document.getElementById("iteration-badge"),
@@ -67,6 +81,49 @@ function statusGroup(status) {
   return "active";
 }
 
+function formatTokens(value) {
+  return Number(value ?? 0).toLocaleString();
+}
+
+function formatCost(value, fullyPriced = true) {
+  const amount = Number(value ?? 0);
+  const digits = amount > 0 && amount < 0.01 ? 4 : 3;
+  return `$${amount.toFixed(digits)}${fullyPriced ? "" : "*"}`;
+}
+
+function renderUsageBreakdown() {
+  const usage = state.usage;
+  const rows = usage?.breakdown ?? [];
+  els.costBreakdown.classList.toggle("hidden", !usage?.calls);
+  if (!usage?.calls) {
+    els.costBreakdownRows.innerHTML = "";
+    return;
+  }
+
+  const runCount = new Set(rows.map((row) => row.runId ?? "legacy")).size;
+  els.costBreakdownMeta.textContent = `${usage.calls} model ${usage.calls === 1 ? "call" : "calls"} across ${runCount} ${runCount === 1 ? "run" : "runs"}`;
+  els.costBreakdownRows.innerHTML = rows.map((row) => {
+    const runLabel = RUN_KIND_LABELS[row.runKind] ?? row.runKind;
+    const runId = row.runId ? row.runId.slice(0, 8) : "Unattributed";
+    const stage = USAGE_STAGE_LABELS[row.stage] ?? row.stage;
+    const pricingLabel = row.fullyPriced ? "Fully priced" : "Some calls could not be priced";
+    return `<tr>
+      <td><span class="run-kind run-kind-${escapeHtml(row.runKind)}">${escapeHtml(runLabel)}</span><small>${escapeHtml(runId)}</small></td>
+      <td>${escapeHtml(stage)}</td>
+      <td>${formatTokens(row.attempt)}</td>
+      <td><code>${escapeHtml(row.model)}</code></td>
+      <td>${formatTokens(row.calls)}</td>
+      <td>${formatTokens(row.inputTokens)}</td>
+      <td>${formatTokens(row.cacheReadTokens)}</td>
+      <td>${formatTokens(row.cacheWriteTokens)}</td>
+      <td>${formatTokens(row.outputTokens)}</td>
+      <td>${formatTokens(row.reasoningTokens)}</td>
+      <td>${formatTokens(row.webSearchCalls)}</td>
+      <td title="${escapeHtml(pricingLabel)}" class="${row.fullyPriced ? "" : "cost-partial"}">${formatCost(row.estimatedCostUsd, row.fullyPriced)}</td>
+    </tr>`;
+  }).join("");
+}
+
 function artifactExists(stage) {
   const article = state.article;
   return Boolean({
@@ -99,9 +156,10 @@ function renderHeader() {
   els.cost.classList.toggle("hidden", !state.usage?.calls);
   if (state.usage?.calls) {
     const qualifier = state.usage.fullyPriced ? "estimated" : "partially estimated";
-    els.cost.textContent = `$${state.usage.estimatedCostUsd.toFixed(3)} ${qualifier}`;
+    els.cost.textContent = `${formatCost(state.usage.estimatedCostUsd)} ${qualifier}`;
     els.cost.title = `${state.usage.calls} model calls · ${state.usage.inputTokens.toLocaleString()} input tokens · ${state.usage.outputTokens.toLocaleString()} output tokens`;
   }
+  renderUsageBreakdown();
   const group = statusGroup(article.status);
   els.status.className = `status-pill status-${group}`;
   els.status.innerHTML = `<i></i>${STATUS_LABELS[article.status] ?? article.status}`;

@@ -12,6 +12,9 @@ const ModelStageSchema = z.enum([
   "seo",
 ]);
 
+export const PipelineRunKindSchema = z.enum(["initial", "continuation", "iteration", "retry"]);
+export type PipelineRunKind = z.infer<typeof PipelineRunKindSchema>;
+
 export const EventSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("AgentStarted"), agent: z.string(), ts: z.string() }),
   z.object({ type: z.literal("ThinkingStarted"), agent: z.string(), ts: z.string() }),
@@ -47,6 +50,9 @@ export const EventSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("ReviewGenerated"), agent: z.string(), ts: z.string() }),
   z.object({
     type: z.literal("ModelUsage"),
+    runId: z.string().uuid().optional(),
+    runKind: PipelineRunKindSchema.optional(),
+    attempt: z.number().int().positive().optional(),
     stage: ModelStageSchema,
     model: z.string(),
     inputTokens: z.number().int().nonnegative(),

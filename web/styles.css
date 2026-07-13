@@ -126,6 +126,33 @@ h1, h2, h3, p { margin-top: 0; }
 .heading-meta > span:not(.status-pill) + span:not(.status-pill)::before { content: "·"; margin-right: 10px; }
 .segmented-control { display: flex; flex-shrink: 0; padding: 3px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); }
 
+.cost-breakdown { margin: -8px 0 20px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); box-shadow: 0 8px 30px rgba(39, 41, 36, .04); overflow: hidden; }
+.cost-breakdown summary { min-height: 64px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; gap: 20px; cursor: pointer; list-style: none; }
+.cost-breakdown summary::-webkit-details-marker { display: none; }
+.cost-breakdown summary > span:first-child { display: grid; gap: 3px; }
+.cost-breakdown summary strong { font-size: 13px; }
+.cost-breakdown summary small, .cost-note { color: var(--muted); font-size: 10px; }
+.cost-disclosure-label { color: var(--accent); font-size: 11px; font-weight: 700; }
+.cost-breakdown[open] .cost-disclosure-label { font-size: 0; }
+.cost-breakdown[open] .cost-disclosure-label::after { content: "Hide details"; font-size: 11px; }
+.cost-table-wrap { overflow-x: auto; border-top: 1px solid var(--line-soft); }
+.cost-table { width: 100%; min-width: 1080px; border-collapse: collapse; font-size: 11px; font-variant-numeric: tabular-nums; }
+.cost-table th, .cost-table td { padding: 10px 11px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line-soft); }
+.cost-table th { color: var(--muted); background: #faf9f5; font-size: 9px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+.cost-table th:first-child, .cost-table th:nth-child(2), .cost-table th:nth-child(4), .cost-table td:first-child, .cost-table td:nth-child(2), .cost-table td:nth-child(4) { text-align: left; }
+.cost-table tbody tr:last-child td { border-bottom: 0; }
+.cost-table tbody tr:hover { background: #faf9f5; }
+.cost-table td:first-child { display: grid; gap: 3px; }
+.cost-table td:first-child small { color: var(--muted); font: 9px ui-monospace, SFMono-Regular, Menlo, monospace; }
+.cost-table code { color: var(--muted); font-size: 10px; }
+.run-kind { width: fit-content; padding: 3px 6px; border-radius: 999px; background: var(--blue-soft); color: var(--blue); font-size: 9px; font-weight: 700; }
+.run-kind-retry { color: var(--red); background: var(--red-soft); }
+.run-kind-iteration { color: var(--amber); background: var(--amber-soft); }
+.run-kind-continuation { color: var(--accent); background: var(--accent-soft); }
+.run-kind-legacy { color: var(--muted); background: #eceae3; }
+.cost-partial { color: var(--amber); font-weight: 700; }
+.cost-note { margin: 0; padding: 10px 18px; border-top: 1px solid var(--line-soft); line-height: 1.45; }
+
 .review-banner { margin-bottom: 20px; padding: 22px; display: grid; grid-template-columns: minmax(240px, .8fr) minmax(320px, 1.2fr); gap: 30px; border: 1px solid #e5c99f; border-radius: 13px; background: #fff9ee; box-shadow: 0 8px 30px rgba(125, 81, 22, .06); }
 .review-banner h2 { font: 600 24px/1.15 "Newsreader", serif; margin-bottom: 8px; }
 .review-banner p:not(.eyebrow):not(.form-error) { margin: 0; color: #766a59; font-size: 12px; line-height: 1.55; }
@@ -193,5 +220,6 @@ h1, h2, h3, p { margin-top: 0; }
   .workspace-grid { grid-template-columns: 1fr; }.stage-sidebar { position: static; width: 100%; height: auto; padding: 14px; border-right: 0; border-bottom: 1px solid var(--line); overflow-x: auto; }
   .back-link { display: none; }.stage-nav { display: flex; min-width: max-content; }.stage-item { width: auto; grid-template-columns: 22px 1fr; }.stage-item small { display: none; }.stage-sidebar > .button { position: static; width: auto; margin: 10px; }
   .artifact-workspace { width: min(100% - 28px, 900px); padding: 28px 0 60px; }.article-heading { align-items: flex-start; flex-direction: column; }.review-banner { grid-template-columns: 1fr; gap: 18px; }
+  .cost-breakdown { margin-top: -4px; }.cost-breakdown summary { padding: 12px 14px; }.cost-note { padding: 9px 14px; }
   .definition-grid { grid-template-columns: 1fr; }.markdown-preview { width: calc(100% - 34px); padding-top: 32px; }.field-row { flex-direction: column; gap: 0; }
 }

@@ -1,5 +1,6 @@
 import type { z } from "zod";
 import type { AgentEventInput } from "../schemas/events.js";
+import type { PipelineRunKind } from "../schemas/events.js";
 import type { EventLogger } from "../events/EventLogger.js";
 
 export interface AgentContext {
@@ -7,11 +8,29 @@ export interface AgentContext {
   emit: (event: AgentEventInput) => Promise<void>;
 }
 
+export interface ModelUsageAttribution {
+  runId: string;
+  runKind: PipelineRunKind;
+  attempt: number;
+}
+
 export function makeAgentContext(articleId: string, eventLogger: EventLogger): AgentContext {
   return {
     articleId,
     emit: async (event) => {
       await eventLogger.append(articleId, event);
+    },
+  };
+}
+
+export function withModelUsageAttribution(
+  ctx: AgentContext,
+  attribution: ModelUsageAttribution
+): AgentContext {
+  return {
+    articleId: ctx.articleId,
+    emit: async (event) => {
+      await ctx.emit(event.type === "ModelUsage" ? { ...event, ...attribution } : event);
     },
   };
 }

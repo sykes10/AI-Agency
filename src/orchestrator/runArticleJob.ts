@@ -1,9 +1,11 @@
+import { randomUUID } from "node:crypto";
 import { articleStore, type ArticleStore } from "../storage/ArticleStore.js";
 import { eventLogger, type EventLogger } from "../events/EventLogger.js";
-import { makeAgentContext } from "../agents/Agent.js";
+import { makeAgentContext, withModelUsageAttribution } from "../agents/Agent.js";
 import { buildPipeline } from "./Orchestrator.js";
 import { assertTransition } from "./stateMachine.js";
-import type { ArticleStatus } from "../schemas/article.js";
+import type { Article, ArticleStatus } from "../schemas/article.js";
+import type { PipelineRunKind } from "../schemas/events.js";
 
 const MAX_RETRIES = 2;
 const RETRY_BACKOFF_MS = [1000, 4000];
@@ -16,6 +18,15 @@ const activeJobs = new Set<string>();
 
 export function isJobActive(articleId: string): boolean {
   return activeJobs.has(articleId);
+}
+
+export function inferPipelineRunKind(article: Article): PipelineRunKind {
+  if (article.status === "Failed") return "retry";
+  if (article.draftReview?.state === "iteration_requested" || article.status === "Rejected") {
+    return "iteration";
+  }
+  if (article.draftReview?.state === "approved") return "continuation";
+  return "initial";
 }
 
 export async function runArticleJob(
@@ -43,6 +54,8 @@ async function runArticleJobInternal(
   if (!article) throw new Error(`Article not found: ${articleId}`);
 
   const ctx = makeAgentContext(articleId, logger);
+  const runId = randomUUID();
+  const runKind = inferPipelineRunKind(article);
   const pipeline = buildPipeline(store);
 
   for (const stage of pipeline) {
@@ -70,7 +83,10 @@ async function runArticleJobInternal(
 
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
       try {
-        await stage.run(article, ctx);
+        await stage.run(
+          article,
+          withModelUsageAttribution(ctx, { runId, runKind, attempt: attempt + 1 })
+        );
         succeeded = true;
         break;
       } catch (err) {

@@ -264,4 +264,47 @@ describe("runArticleJob", () => {
       { iteration: 1, draft: SECOND_DRAFT },
     ]);
   });
+
+  it("attributes model usage to the pipeline run and stage attempt", async () => {
+    researchRunMock.mockImplementation(async (_input, ctx) => {
+      await ctx.emit({
+        type: "ModelUsage",
+        stage: "research",
+        model: "gpt-5.6-terra",
+        inputTokens: 100,
+        outputTokens: 20,
+        reasoningTokens: 5,
+        cacheReadTokens: 10,
+        cacheWriteTokens: 0,
+        webSearchCalls: 1,
+        estimatedCostUsd: 0.011,
+      });
+      return RESEARCH;
+    });
+    planningRunMock.mockResolvedValue(OUTLINE);
+    writingRunMock.mockResolvedValue(DRAFT);
+
+    const { articleStore } = await import("../../src/storage/ArticleStore.js");
+    const { runArticleJob } = await import("../../src/orchestrator/runArticleJob.js");
+    const { eventLogger } = await import("../../src/events/EventLogger.js");
+
+    const id = "article-attribution";
+    await articleStore.create(id, {
+      topic: "t",
+      audience: "a",
+      contentType: "pattern",
+      depth: "overview",
+    });
+    await runArticleJob(id);
+
+    const usage = (await eventLogger.readAll(id)).find((event) => event.type === "ModelUsage");
+    expect(usage).toMatchObject({
+      type: "ModelUsage",
+      runKind: "initial",
+      attempt: 1,
+      stage: "research",
+    });
+    if (usage?.type !== "ModelUsage") throw new Error("Expected ModelUsage event");
+    expect(usage.runId).toMatch(/^[0-9a-f-]{36}$/);
+  });
 });

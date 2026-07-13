@@ -6,6 +6,7 @@ import { runArticleJob, isJobActive } from "../../orchestrator/runArticleJob.js"
 import { CreateArticleRequestSchema } from "../../schemas/article.js";
 import { DraftReviewRequestSchema } from "../../schemas/draftReview.js";
 import { eventLogger } from "../../events/EventLogger.js";
+import { summarizeModelUsage } from "../../llm/usageSummary.js";
 
 export const articlesRouter = Router();
 
@@ -59,21 +60,7 @@ articlesRouter.get("/articles/:id/usage", async (req, res) => {
   }
 
   const events = await eventLogger.readAll(article.id);
-  const usageEvents = events.filter((event) => event.type === "ModelUsage");
-  const estimatedCosts = usageEvents
-    .map((event) => event.estimatedCostUsd)
-    .filter((cost): cost is number => cost !== null);
-
-  res.json({
-    calls: usageEvents.length,
-    inputTokens: usageEvents.reduce((total, event) => total + event.inputTokens, 0),
-    outputTokens: usageEvents.reduce((total, event) => total + event.outputTokens, 0),
-    reasoningTokens: usageEvents.reduce((total, event) => total + event.reasoningTokens, 0),
-    cacheReadTokens: usageEvents.reduce((total, event) => total + event.cacheReadTokens, 0),
-    webSearchCalls: usageEvents.reduce((total, event) => total + event.webSearchCalls, 0),
-    estimatedCostUsd: estimatedCosts.reduce((total, cost) => total + cost, 0),
-    fullyPriced: estimatedCosts.length === usageEvents.length,
-  });
+  res.json(summarizeModelUsage(events));
 });
 
 articlesRouter.get("/articles/:id/drafts", async (req, res) => {
