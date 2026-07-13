@@ -5,6 +5,7 @@ const ORDER: ArticleStatus[] = [
   "Researching",
   "Planning",
   "Writing",
+  "AwaitingDraftReview",
   "TechnicalReview",
   "EditorialReview",
   "Revising",
@@ -15,6 +16,10 @@ const ORDER: ArticleStatus[] = [
 
 export function canTransition(from: ArticleStatus, to: ArticleStatus): boolean {
   if (to === "Failed") return true;
+  if (from === "AwaitingDraftReview") {
+    return to === "Writing" || to === "TechnicalReview" || to === "Rejected";
+  }
+  if (from === "Rejected") return to === "Writing";
   const fromIndex = ORDER.indexOf(from);
   const toIndex = ORDER.indexOf(to);
   if (fromIndex === -1 || toIndex === -1) return false;

@@ -8,6 +8,8 @@ import { structuredCall } from "../llm/structuredCall.js";
 const WritingInputSchema = z.object({
   outline: OutlineSchema,
   research: ResearchReportSchema,
+  previousDraft: DraftSchema.optional(),
+  feedback: z.string().min(1).optional(),
 });
 
 type WritingInput = z.infer<typeof WritingInputSchema>;
@@ -74,9 +76,12 @@ export class WritingAgent extends Agent<WritingInput, Draft> {
   readonly outputSchema = DraftSchema;
 
   protected async produceOutput(input: WritingInput, _ctx: AgentContext): Promise<unknown> {
+    const iterationContext = input.previousDraft
+      ? `\n\nExisting Draft:\n\n${JSON.stringify(input.previousDraft, null, 2)}\n\nEditor feedback:\n\n${input.feedback}\n\nRewrite the Draft to address the editor's feedback. Preserve strong material that the feedback does not challenge.`
+      : "\n\nWrite the complete first Draft.";
     return structuredCall({
       system: SYSTEM_PROMPT,
-      userPrompt: `Outline:\n\n${JSON.stringify(input.outline, null, 2)}\n\nResearch report (for grounding facts, definitions, and examples):\n\n${JSON.stringify(input.research, null, 2)}\n\nWrite the complete first draft.`,
+      userPrompt: `Outline:\n\n${JSON.stringify(input.outline, null, 2)}\n\nResearch report (for grounding facts, definitions, and examples):\n\n${JSON.stringify(input.research, null, 2)}${iterationContext}`,
       schema: this.outputSchema,
       maxTokens: 16384,
     });

@@ -7,26 +7,83 @@
   <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
-  <h1>Press Agency</h1>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="/">
+        <span class="brand-mark">P</span>
+        <span>Press Agency</span>
+      </a>
+      <button id="new-article-btn" class="button button-primary">New article</button>
+    </header>
 
-  <form id="create-form">
-    <textarea id="idea" placeholder="Describe your idea (e.g. Understanding event loops in Node.js)" required></textarea>
-    <input type="text" id="audience" placeholder="Audience (e.g. Backend engineers)" required />
-    <select id="content-type">
-      <option value="blueprint">Blueprint</option>
-      <option value="pattern">Pattern</option>
-    </select>
-    <select id="depth">
-      <option value="deep-dive">Deep dive</option>
-      <option value="overview">Overview</option>
-    </select>
-    <button type="submit">Generate article</button>
-  </form>
+    <main class="library-page">
+      <section class="page-heading">
+        <div>
+          <p class="eyebrow">Editorial desk</p>
+          <h1>Your articles</h1>
+          <p class="muted">Draft, review, and publish from one quiet workspace.</p>
+        </div>
+      </section>
 
-  <div class="panel">
-    <strong>Recent articles</strong>
-    <ul id="recent-list"></ul>
+      <section class="library-card">
+        <div class="library-toolbar">
+          <label class="search-field">
+            <span aria-hidden="true">⌕</span>
+            <input id="article-search" type="search" placeholder="Search articles" />
+          </label>
+          <div class="filter-tabs" id="status-filters">
+            <button class="active" data-filter="all">All</button>
+            <button data-filter="review">Needs review</button>
+            <button data-filter="active">In progress</button>
+            <button data-filter="published">Published</button>
+          </div>
+        </div>
+        <div id="article-list" class="article-list" aria-live="polite"></div>
+      </section>
+    </main>
   </div>
+
+  <dialog id="create-dialog" class="create-dialog">
+    <form id="create-form" method="dialog">
+      <div class="dialog-heading">
+        <div>
+          <p class="eyebrow">New assignment</p>
+          <h2>Start an article</h2>
+        </div>
+        <button type="button" id="close-dialog" class="icon-button" aria-label="Close">×</button>
+      </div>
+
+      <label class="field field-large">
+        <span>What should the article explore?</span>
+        <textarea id="idea" placeholder="Describe the idea, angle, or question…" required autofocus></textarea>
+      </label>
+      <label class="field">
+        <span>Audience</span>
+        <input type="text" id="audience" placeholder="e.g. Frontend engineers" required />
+      </label>
+      <div class="field-row">
+        <label class="field">
+          <span>Format</span>
+          <select id="content-type">
+            <option value="blueprint">Blueprint</option>
+            <option value="pattern">Pattern</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Depth</span>
+          <select id="depth">
+            <option value="deep-dive">Deep dive</option>
+            <option value="overview">Overview</option>
+          </select>
+        </label>
+      </div>
+      <p id="create-error" class="form-error hidden"></p>
+      <div class="dialog-actions">
+        <button type="button" id="cancel-create" class="button button-ghost">Cancel</button>
+        <button type="submit" id="create-submit" class="button button-primary">Create article</button>
+      </div>
+    </form>
+  </dialog>
 
   <script src="/common.js"></script>
   <script src="/home.js"></script>

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ArticleStatusSchema } from "./article.js";
+import { DraftReviewActionSchema } from "./draftReview.js";
 
 export const EventSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("AgentStarted"), agent: z.string(), ts: z.string() }),
@@ -34,6 +35,18 @@ export const EventSchema = z.discriminatedUnion("type", [
   }),
   z.object({ type: z.literal("AgentCompleted"), agent: z.string(), ts: z.string() }),
   z.object({ type: z.literal("ReviewGenerated"), agent: z.string(), ts: z.string() }),
+  z.object({
+    type: z.literal("DraftReviewRequested"),
+    iteration: z.number().int().nonnegative(),
+    ts: z.string(),
+  }),
+  z.object({
+    type: z.literal("DraftReviewDecided"),
+    action: DraftReviewActionSchema,
+    iteration: z.number().int().nonnegative(),
+    feedback: z.string().nullable(),
+    ts: z.string(),
+  }),
   z.object({
     type: z.literal("Retry"),
     agent: z.string(),

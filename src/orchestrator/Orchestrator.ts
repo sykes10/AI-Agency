@@ -49,12 +49,24 @@ export function buildPipeline(store: ArticleStore): StageDef[] {
     {
       status: "Writing",
       agentName: writingAgent.name,
-      isDone: (a) => a.draft !== null,
+      isDone: (a) => a.draft !== null && a.draftReview?.state !== "iteration_requested",
       run: async (a, ctx) => {
-        const draft = await writingAgent.run({ outline: a.outline!, research: a.research! }, ctx);
+        const previousDraft = a.draftReview?.state === "iteration_requested" ? a.draft ?? undefined : undefined;
+        const feedback = a.draftReview?.state === "iteration_requested"
+          ? a.draftReview.feedback ?? undefined
+          : undefined;
+        const draft = await writingAgent.run(
+          { outline: a.outline!, research: a.research!, previousDraft, feedback },
+          ctx
+        );
         await store.saveDraft(a.id, draft);
         a.draft = draft;
+        a.draftReview = await store.requestDraftReview(a.id);
         await ctx.emit({ type: "ArtifactCreated", agent: writingAgent.name, artifact: "draft" });
+        await ctx.emit({
+          type: "DraftReviewRequested",
+          iteration: a.draftReview.iteration,
+        });
       },
     },
     {

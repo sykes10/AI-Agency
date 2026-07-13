@@ -4,6 +4,8 @@ import { z } from "zod";
 import { articleStore } from "../../storage/ArticleStore.js";
 import { runArticleJob, isJobActive } from "../../orchestrator/runArticleJob.js";
 import { CreateArticleRequestSchema } from "../../schemas/article.js";
+import { DraftReviewRequestSchema } from "../../schemas/draftReview.js";
+import { eventLogger } from "../../events/EventLogger.js";
 
 export const articlesRouter = Router();
 
@@ -47,6 +49,70 @@ articlesRouter.get("/articles/:id", async (req, res) => {
     return;
   }
   res.json(article);
+});
+
+articlesRouter.get("/articles/:id/drafts", async (req, res) => {
+  const article = await articleStore.load(req.params.id);
+  if (!article) {
+    res.status(404).json({ error: "Article not found" });
+    return;
+  }
+  res.json({ drafts: await articleStore.listDraftVersions(article.id) });
+});
+
+articlesRouter.post("/articles/:id/draft-review", async (req, res) => {
+  const parsed = DraftReviewRequestSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.flatten() });
+    return;
+  }
+
+  const article = await articleStore.load(req.params.id);
+  if (!article) {
+    res.status(404).json({ error: "Article not found" });
+    return;
+  }
+  if (!article.draft || !article.draftReview) {
+    res.status(409).json({ error: "This Article does not have a Draft to review" });
+    return;
+  }
+  if (!['AwaitingDraftReview', 'Rejected'].includes(article.status)) {
+    res.status(409).json({ error: `The Draft cannot be reviewed while the Article is ${article.status}` });
+    return;
+  }
+  if (article.status === "Rejected" && parsed.data.action !== "iterate") {
+    res.status(409).json({ error: "A rejected Draft can only be iterated" });
+    return;
+  }
+  if (isJobActive(article.id)) {
+    res.status(409).json({ error: "Article is currently being processed" });
+    return;
+  }
+
+  const feedback = parsed.data.feedback ?? null;
+  const review = await articleStore.decideDraft(article.id, parsed.data.action, feedback);
+  await eventLogger.append(article.id, {
+    type: "DraftReviewDecided",
+    action: parsed.data.action,
+    iteration: parsed.data.action === "iterate" ? review.iteration - 1 : review.iteration,
+    feedback,
+  });
+
+  if (parsed.data.action === "reject") {
+    await articleStore.setStatus(article.id, "Rejected");
+    await eventLogger.append(article.id, {
+      type: "StatusChanged",
+      from: article.status,
+      to: "Rejected",
+    });
+    res.json({ id: article.id, status: "Rejected", draftReview: review });
+    return;
+  }
+
+  runArticleJob(article.id).catch((err) => {
+    console.error(`Article job ${article.id} crashed after Draft review:`, err);
+  });
+  res.status(202).json({ id: article.id, status: article.status, draftReview: review });
 });
 
 articlesRouter.get("/articles/:id/artifact/:stage", async (req, res) => {

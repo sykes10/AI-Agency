@@ -90,7 +90,7 @@ afterEach(async () => {
 });
 
 describe("runArticleJob", () => {
-  it("runs all stages in order and publishes the article", async () => {
+  it("pauses for Draft approval, then runs the remaining stages and publishes", async () => {
     researchRunMock.mockResolvedValue(RESEARCH);
     planningRunMock.mockResolvedValue(OUTLINE);
     writingRunMock.mockResolvedValue(DRAFT);
@@ -114,7 +114,15 @@ describe("runArticleJob", () => {
     await articleStore.create(id, { topic: "t", audience: "a", contentType: "blueprint", depth: "deep-dive" });
     await runArticleJob(id);
 
-    const article = await articleStore.load(id);
+    let article = await articleStore.load(id);
+    expect(article?.status).toBe("AwaitingDraftReview");
+    expect(article?.draftReview?.state).toBe("pending");
+    expect(technicalRunMock).not.toHaveBeenCalled();
+
+    await articleStore.decideDraft(id, "approve", null);
+    await runArticleJob(id);
+
+    article = await articleStore.load(id);
     expect(article?.status).toBe("Published");
     expect(article?.title).toBe("Title");
     expect(researchRunMock).toHaveBeenCalledTimes(1);
@@ -136,6 +144,7 @@ describe("runArticleJob", () => {
       "Researching",
       "Planning",
       "Writing",
+      "AwaitingDraftReview",
       "TechnicalReview",
       "EditorialReview",
       "Revising",
@@ -208,9 +217,51 @@ describe("runArticleJob", () => {
     await runArticleJob(id);
 
     article = await articleStore.load(id);
+    expect(article?.status).toBe("AwaitingDraftReview");
+    await articleStore.decideDraft(id, "approve", null);
+    await runArticleJob(id);
+
+    article = await articleStore.load(id);
     expect(article?.status).toBe("Published");
     // Research should not have been re-run since it was already persisted.
     expect(researchRunMock).toHaveBeenCalledTimes(1);
     expect(planningRunMock).toHaveBeenCalledTimes(1);
   }, 15000);
+
+  it("iterates a Draft from editor feedback without re-running earlier artifacts", async () => {
+    const SECOND_DRAFT = { ...DRAFT, body: "A stronger second Draft." };
+    researchRunMock.mockResolvedValue(RESEARCH);
+    planningRunMock.mockResolvedValue(OUTLINE);
+    writingRunMock.mockResolvedValueOnce(DRAFT).mockResolvedValueOnce(SECOND_DRAFT);
+
+    const { articleStore } = await import("../../src/storage/ArticleStore.js");
+    const { runArticleJob } = await import("../../src/orchestrator/runArticleJob.js");
+
+    const id = "article-iteration";
+    await articleStore.create(id, { topic: "t", audience: "a", contentType: "pattern", depth: "overview" });
+    await runArticleJob(id);
+    await articleStore.decideDraft(id, "iterate", "Open with the production failure and tighten the middle.");
+    await runArticleJob(id);
+
+    const article = await articleStore.load(id);
+    expect(article?.status).toBe("AwaitingDraftReview");
+    expect(article?.draft).toEqual(SECOND_DRAFT);
+    expect(article?.draftReview?.iteration).toBe(1);
+    expect(article?.draftReview?.history).toHaveLength(1);
+    expect(researchRunMock).toHaveBeenCalledTimes(1);
+    expect(planningRunMock).toHaveBeenCalledTimes(1);
+    expect(writingRunMock).toHaveBeenLastCalledWith(
+      {
+        outline: OUTLINE,
+        research: RESEARCH,
+        previousDraft: DRAFT,
+        feedback: "Open with the production failure and tighten the middle.",
+      },
+      expect.anything()
+    );
+    expect(await articleStore.listDraftVersions(id)).toEqual([
+      { iteration: 0, draft: DRAFT },
+      { iteration: 1, draft: SECOND_DRAFT },
+    ]);
+  });
 });

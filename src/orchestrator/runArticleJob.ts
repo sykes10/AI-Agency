@@ -48,6 +48,17 @@ async function runArticleJobInternal(
   for (const stage of pipeline) {
     if (stage.isDone(article)) continue;
 
+    if (stage.status === "TechnicalReview" && article.draftReview?.state !== "approved") {
+      const fromStatus = article.status;
+      if (fromStatus !== "AwaitingDraftReview") {
+        assertTransition(fromStatus, "AwaitingDraftReview");
+        article.status = "AwaitingDraftReview";
+        await store.setStatus(articleId, "AwaitingDraftReview");
+        await ctx.emit({ type: "StatusChanged", from: fromStatus, to: "AwaitingDraftReview" });
+      }
+      return;
+    }
+
     const fromStatus: ArticleStatus = article.status;
     assertTransition(fromStatus, stage.status);
     article.status = stage.status;

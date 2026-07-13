@@ -6,42 +6,76 @@
   <title>Press Agency — Article</title>
   <link rel="stylesheet" href="/styles.css" />
 </head>
-<body>
-  <a href="/" class="back-link">&larr; Back</a>
-
-  <div id="article-header" class="article-header">
-    <h1 id="article-title">Loading…</h1>
-    <div class="article-meta">
-      <span id="article-audience"></span>
-      <span id="article-content-type" class="badge"></span>
-      <span id="current-status" class="badge"></span>
-      <button id="retry-btn" class="hidden">Retry</button>
-    </div>
-  </div>
-
-  <div class="layout">
-    <div class="panel">
-      <strong>Live events</strong>
-      <div id="event-log"></div>
-    </div>
-
-    <div class="panel">
-      <strong>Artifacts</strong>
-      <div class="tabs" id="stage-tabs">
-        <button data-stage="research">Research</button>
-        <button data-stage="outline">Outline</button>
-        <button data-stage="draft">Draft</button>
-        <button data-stage="technical">Technical</button>
-        <button data-stage="editorial">Editorial</button>
-        <button data-stage="revised-draft">Revised Draft</button>
-        <button data-stage="seo">SEO</button>
-        <button data-stage="metadata">Final</button>
+<body class="workspace-body">
+  <div class="workspace-shell">
+    <header class="topbar workspace-topbar">
+      <a class="brand" href="/"><span class="brand-mark">P</span><span>Press Agency</span></a>
+      <div class="topbar-actions">
+        <span id="save-state" class="save-state">Live</span>
+        <button id="activity-toggle" class="button button-ghost">Activity</button>
       </div>
-      <div class="tabs hidden" id="view-toggle">
-        <button data-view="preview">Preview</button>
-        <button data-view="raw">Raw JSON</button>
-      </div>
-      <div id="stage-content"></div>
+    </header>
+
+    <div class="workspace-grid">
+      <aside class="stage-sidebar">
+        <a href="/" class="back-link">‹ All articles</a>
+        <nav id="stage-nav" class="stage-nav" aria-label="Article stages"></nav>
+        <button id="retry-btn" class="button button-danger hidden">Retry pipeline</button>
+      </aside>
+
+      <main class="artifact-workspace">
+        <header class="article-heading">
+          <div class="article-heading-copy">
+            <div class="heading-meta">
+              <span id="current-status" class="status-pill"><i></i>Loading</span>
+              <span id="article-content-type"></span>
+              <span id="article-audience"></span>
+            </div>
+            <h1 id="article-title">Loading…</h1>
+            <p id="article-topic" class="muted"></p>
+          </div>
+          <div id="view-toggle" class="segmented-control hidden">
+            <button class="active" data-view="preview">Preview</button>
+            <button data-view="raw">Data</button>
+          </div>
+        </header>
+
+        <section id="review-banner" class="review-banner hidden">
+          <div>
+            <p class="eyebrow">Your review</p>
+            <h2 id="review-heading">Is this Draft ready to continue?</h2>
+            <p id="review-copy">Approve it to begin technical and editorial review, or leave direction for another iteration.</p>
+          </div>
+          <div class="review-controls">
+            <textarea id="review-feedback" placeholder="What should change in the next Draft?"></textarea>
+            <p id="review-error" class="form-error hidden"></p>
+            <div class="review-actions">
+              <button id="reject-btn" class="button button-ghost-danger">Reject</button>
+              <button id="iterate-btn" class="button button-secondary">Request changes</button>
+              <button id="approve-btn" class="button button-primary">Approve Draft</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="artifact-card">
+          <div class="artifact-card-header">
+            <div>
+              <p class="eyebrow" id="artifact-kicker">Artifact</p>
+              <h2 id="artifact-title">Research</h2>
+            </div>
+            <span id="iteration-badge" class="iteration-badge hidden"></span>
+          </div>
+          <div id="stage-content" class="stage-content"></div>
+        </section>
+      </main>
+
+      <aside id="activity-drawer" class="activity-drawer" aria-hidden="true">
+        <div class="activity-header">
+          <div><p class="eyebrow">Run details</p><h2>Activity</h2></div>
+          <button id="activity-close" class="icon-button" aria-label="Close activity">×</button>
+        </div>
+        <div id="event-log" class="event-log"></div>
+      </aside>
     </div>
   </div>
 

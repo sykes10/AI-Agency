@@ -24,6 +24,14 @@ _Avoid_: Updated draft, final draft
 The recorded decision for one Review finding. A Resolution says whether the finding was applied or rejected and preserves the reason for that decision.
 _Avoid_: Review status, action item
 
+**Draft Review**:
+The editor's checkpoint after a Draft is produced. The editor can approve the Draft and continue the Article pipeline, reject it, or request another iteration with written feedback.
+_Avoid_: Approval step, manual review
+
+**Draft Iteration**:
+An immutable new version of the Draft produced from the previous Draft and the editor's feedback. Earlier Draft iterations remain available as Article history.
+_Avoid_: Overwritten draft, edit
+
 ## Example dialogue
 
 **Editor:** Has this Article been reviewed yet?

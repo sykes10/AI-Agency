@@ -5,6 +5,7 @@ import {
   type ArticleStatus,
   type CreateArticleRequest,
 } from "../schemas/article.js";
+import { DraftReviewSchema, type DraftReview, type DraftReviewAction } from "../schemas/draftReview.js";
 import { ResearchReportSchema, type ResearchReport } from "../schemas/research.js";
 import { OutlineSchema, type Outline } from "../schemas/outline.js";
 import { DraftSchema, type Draft } from "../schemas/draft.js";
@@ -22,6 +23,7 @@ import {
   articleRecordPath,
   articlesRoot,
   finalMarkdownPath,
+  draftVersionPath,
   stagePath,
 } from "./paths.js";
 
@@ -36,6 +38,7 @@ interface ArticleRecord {
   createdAt: string;
   updatedAt: string;
   error: string | null;
+  draftReview: DraftReview | null;
 }
 
 async function readJson(filePath: string): Promise<unknown | null> {
@@ -67,6 +70,7 @@ export class ArticleStore {
       createdAt: now,
       updatedAt: now,
       error: null,
+      draftReview: null,
     };
     await writeJson(articleRecordPath(id), record);
     return this.load(id) as Promise<Article>;
@@ -94,6 +98,7 @@ export class ArticleStore {
 
     const article: Article = ArticleSchema.parse({
       ...record,
+      contentType: record.contentType ?? "blueprint",
       research: research ? ResearchReportSchema.parse(research) : null,
       outline: outline ? OutlineSchema.parse(outline) : null,
       draft: draft ? DraftSchema.parse(draft) : null,
@@ -129,7 +134,7 @@ export class ArticleStore {
         title: r.title,
         status: r.status,
         topic: r.topic,
-        contentType: r.contentType,
+        contentType: r.contentType ?? "blueprint",
         createdAt: r.createdAt,
         updatedAt: r.updatedAt,
       }));
@@ -161,7 +166,67 @@ export class ArticleStore {
   }
 
   async saveDraft(id: string, value: Draft): Promise<void> {
+    const record = (await readJson(articleRecordPath(id))) as ArticleRecord | null;
+    if (!record) throw new Error(`Article not found: ${id}`);
+    const iteration = record.draftReview?.iteration ?? 0;
+    await writeJson(draftVersionPath(id, iteration), value);
     await writeJson(stagePath(id, "draft"), value);
+  }
+
+  async requestDraftReview(id: string): Promise<DraftReview> {
+    const record = (await readJson(articleRecordPath(id))) as ArticleRecord | null;
+    if (!record) throw new Error(`Article not found: ${id}`);
+    const now = new Date().toISOString();
+    record.draftReview = {
+      state: "pending",
+      iteration: record.draftReview?.iteration ?? 0,
+      feedback: null,
+      history: record.draftReview?.history ?? [],
+      updatedAt: now,
+    };
+    record.updatedAt = now;
+    await writeJson(articleRecordPath(id), record);
+    return DraftReviewSchema.parse(record.draftReview);
+  }
+
+  async decideDraft(
+    id: string,
+    action: DraftReviewAction,
+    feedback: string | null
+  ): Promise<DraftReview> {
+    const record = (await readJson(articleRecordPath(id))) as ArticleRecord | null;
+    if (!record) throw new Error(`Article not found: ${id}`);
+    if (!record.draftReview) throw new Error("Draft is not awaiting review");
+
+    const now = new Date().toISOString();
+    const currentIteration = record.draftReview.iteration;
+    record.draftReview.history.push({
+      action,
+      iteration: currentIteration,
+      feedback,
+      createdAt: now,
+    });
+    record.draftReview.state =
+      action === "approve" ? "approved" : action === "reject" ? "rejected" : "iteration_requested";
+    record.draftReview.feedback = feedback;
+    if (action === "iterate") record.draftReview.iteration += 1;
+    record.draftReview.updatedAt = now;
+    record.updatedAt = now;
+    await writeJson(articleRecordPath(id), record);
+    return DraftReviewSchema.parse(record.draftReview);
+  }
+
+  async listDraftVersions(id: string): Promise<Array<{ iteration: number; draft: Draft }>> {
+    const article = await this.load(id);
+    if (!article) throw new Error(`Article not found: ${id}`);
+    const maxIteration = article.draftReview?.iteration ?? 0;
+    const versions = await Promise.all(
+      Array.from({ length: maxIteration + 1 }, async (_, iteration) => {
+        const draft = await readJson(draftVersionPath(id, iteration));
+        return draft ? { iteration, draft: DraftSchema.parse(draft) } : null;
+      })
+    );
+    return versions.filter((value): value is { iteration: number; draft: Draft } => value !== null);
   }
 
   async saveTechnicalReview(id: string, value: TechnicalReview): Promise<void> {
