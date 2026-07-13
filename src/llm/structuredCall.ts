@@ -1,17 +1,18 @@
 import { z } from "zod";
 import { generateText, Output } from "ai";
-import { model, DEFAULT_MAX_TOKENS } from "./provider.js";
+import { modelFor, DEFAULT_MAX_TOKENS, type ModelStage } from "./provider.js";
 
 export interface StructuredCallParams<T> {
   system: string;
   userPrompt: string;
   schema: z.ZodType<T>;
+  stage: ModelStage;
   maxTokens?: number;
 }
 
 export async function structuredCall<T>(params: StructuredCallParams<T>): Promise<T> {
   const result = await generateText({
-    model,
+    model: modelFor(params.stage),
     system: params.system,
     prompt: params.userPrompt,
     maxOutputTokens: params.maxTokens ?? DEFAULT_MAX_TOKENS,

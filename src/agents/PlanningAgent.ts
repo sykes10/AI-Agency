@@ -27,6 +27,7 @@ export class PlanningAgent extends Agent<PlanningInput, Outline> {
       system: SYSTEM_PROMPT,
       userPrompt: `Research report:\n\n${JSON.stringify(input.research, null, 2)}\n\nProduce the article outline.`,
       schema: this.outputSchema,
+      stage: "planning",
     });
   }
 }

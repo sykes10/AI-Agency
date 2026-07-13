@@ -83,6 +83,7 @@ export class WritingAgent extends Agent<WritingInput, Draft> {
       system: SYSTEM_PROMPT,
       userPrompt: `Outline:\n\n${JSON.stringify(input.outline, null, 2)}\n\nResearch report (for grounding facts, definitions, and examples):\n\n${JSON.stringify(input.research, null, 2)}${iterationContext}`,
       schema: this.outputSchema,
+      stage: "writing",
       maxTokens: 16384,
     });
   }

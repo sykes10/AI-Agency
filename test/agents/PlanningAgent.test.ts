@@ -10,10 +10,8 @@ vi.mock("ai", () => ({
 }));
 
 vi.mock("../../src/llm/provider.js", () => ({
-  model: {},
+  modelFor: () => ({}),
   DEFAULT_MAX_TOKENS: 8192,
-  PROVIDER_NAME: "anthropic",
-  MODEL_ID: "claude-sonnet-5",
 }));
 
 describe("PlanningAgent", () => {

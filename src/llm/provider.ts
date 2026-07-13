@@ -1,38 +1,54 @@
 import "dotenv/config";
-import { anthropic as anthropicProvider } from "@ai-sdk/anthropic";
-import { openai as openaiProvider } from "@ai-sdk/openai";
+import { openai } from "@ai-sdk/openai";
 import type { LanguageModel } from "ai";
 
-export type ProviderName = "anthropic" | "openai";
+export type ModelStage =
+  | "research"
+  | "planning"
+  | "writing"
+  | "technicalReview"
+  | "editorialReview"
+  | "revision"
+  | "seo";
 
-const RAW_PROVIDER = process.env.AI_PROVIDER;
-if (RAW_PROVIDER && RAW_PROVIDER !== "anthropic" && RAW_PROVIDER !== "openai") {
-  throw new Error(`Invalid AI_PROVIDER "${RAW_PROVIDER}" — must be "anthropic" or "openai"`);
-}
-
-export const PROVIDER_NAME: ProviderName = (RAW_PROVIDER as ProviderName) || "anthropic";
-
-const DEFAULT_MODEL_ID: Record<ProviderName, string> = {
-  anthropic: "claude-sonnet-5",
-  openai: "gpt-5",
+const DEFAULT_MODEL_IDS: Record<ModelStage, string> = {
+  research: "gpt-5.6-terra",
+  planning: "gpt-5.6-luna",
+  writing: "gpt-5.6-sol",
+  technicalReview: "gpt-5.6-sol",
+  editorialReview: "gpt-5.6-terra",
+  revision: "gpt-5.6-sol",
+  seo: "gpt-5.6-luna",
 };
 
-export const MODEL_ID =
-  process.env.AI_MODEL ??
-  (PROVIDER_NAME === "openai" ? process.env.OPENAI_MODEL : process.env.ANTHROPIC_MODEL) ??
-  DEFAULT_MODEL_ID[PROVIDER_NAME];
+const STAGE_ENV_KEYS: Record<ModelStage, string> = {
+  research: "OPENAI_MODEL_RESEARCH",
+  planning: "OPENAI_MODEL_PLANNING",
+  writing: "OPENAI_MODEL_WRITING",
+  technicalReview: "OPENAI_MODEL_TECHNICAL_REVIEW",
+  editorialReview: "OPENAI_MODEL_EDITORIAL_REVIEW",
+  revision: "OPENAI_MODEL_REVISION",
+  seo: "OPENAI_MODEL_SEO",
+};
 
-export const DEFAULT_MAX_TOKENS = 16384;
+const globalOverride = process.env.OPENAI_MODEL;
 
-function selectModel(): LanguageModel {
-  switch (PROVIDER_NAME) {
-    case "anthropic":
-      return anthropicProvider(MODEL_ID);
-    case "openai":
-      return openaiProvider(MODEL_ID);
-    default:
-      throw new Error(`Unsupported AI_PROVIDER: ${PROVIDER_NAME}`);
-  }
+export const MODEL_IDS: Record<ModelStage, string> = Object.fromEntries(
+  (Object.keys(DEFAULT_MODEL_IDS) as ModelStage[]).map((stage) => [
+    stage,
+    process.env[STAGE_ENV_KEYS[stage]] ?? globalOverride ?? DEFAULT_MODEL_IDS[stage],
+  ])
+) as Record<ModelStage, string>;
+
+const models = new Map<ModelStage, LanguageModel>();
+
+export function modelFor(stage: ModelStage): LanguageModel {
+  const existing = models.get(stage);
+  if (existing) return existing;
+
+  const model = openai(MODEL_IDS[stage]);
+  models.set(stage, model);
+  return model;
 }
 
-export const model: LanguageModel = selectModel();
+export const DEFAULT_MAX_TOKENS = 16384;

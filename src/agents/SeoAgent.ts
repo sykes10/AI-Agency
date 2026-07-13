@@ -33,6 +33,7 @@ export class SeoAgent extends Agent<SeoInput, SeoReport> {
       system: SYSTEM_PROMPT,
       userPrompt: `Draft:\n\n${JSON.stringify(input.draft, null, 2)}\n\nOutline:\n\n${JSON.stringify(input.outline, null, 2)}\n\nProduce the SEO report.`,
       schema: this.outputSchema,
+      stage: "seo",
     });
   }
 }

@@ -48,6 +48,7 @@ export class EditorialReviewerAgent extends Agent<EditorialReviewInput, Editoria
       system: SYSTEM_PROMPT,
       userPrompt: `Draft:\n\n${JSON.stringify(input.draft, null, 2)}\n\nReview the draft for readability.`,
       schema: this.outputSchema,
+      stage: "editorialReview",
     });
   }
 }

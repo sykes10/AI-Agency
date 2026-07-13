@@ -2,7 +2,7 @@ import { z } from "zod";
 import { generateText, stepCountIs } from "ai";
 import { Agent, type AgentContext } from "./Agent.js";
 import { ResearchReportSchema, type ResearchReport } from "../schemas/research.js";
-import { model, DEFAULT_MAX_TOKENS } from "../llm/provider.js";
+import { modelFor, DEFAULT_MAX_TOKENS } from "../llm/provider.js";
 import { structuredCall } from "../llm/structuredCall.js";
 import { getWebSearchTool } from "../llm/getWebSearchTool.js";
 
@@ -32,7 +32,7 @@ export class ResearchAgent extends Agent<ResearchInput, ResearchReport> {
     const webSearchTool = getWebSearchTool();
 
     const result = await generateText({
-      model,
+      model: modelFor("research"),
       system: SYSTEM_PROMPT,
       prompt: `Research the topic "${input.topic}" for an audience of "${input.audience}" at a "${input.depth}" depth. ${
         webSearchTool
@@ -50,6 +50,7 @@ export class ResearchAgent extends Agent<ResearchInput, ResearchReport> {
       system: `${SYSTEM_PROMPT}\n\nYou have already completed your research (see below). Now synthesize everything you found into the final Research Report. Do not perform any more searches.`,
       userPrompt: `Research notes so far:\n\n${result.text}\n\nProduce the final Research Report for topic "${input.topic}".`,
       schema: this.outputSchema,
+      stage: "research",
     });
   }
 
@@ -66,13 +67,18 @@ export class ResearchAgent extends Agent<ResearchInput, ResearchReport> {
           input: part.input,
         });
       } else if (part.type === "tool-result" && part.toolName === "web_search") {
-        const results = part.output as Array<{ url: string }>;
+        const output = part.output as
+          | Array<{ url: string }>
+          | { sources?: Array<{ url: string }> };
+        const resultCount = Array.isArray(output)
+          ? output.length
+          : output.sources?.length ?? 0;
         await ctx.emit({
           type: "ToolCompleted",
           agent: this.name,
           tool: "web_search",
           error: false,
-          summary: `web_search returned ${results.length} result(s)`,
+          summary: `web_search returned ${resultCount} source(s)`,
         });
       } else if (part.type === "tool-error" && part.toolName === "web_search") {
         await ctx.emit({
