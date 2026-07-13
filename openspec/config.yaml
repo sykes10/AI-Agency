@@ -1,13 +1,72 @@
 schema: spec-driven
 
-# Project context (optional)
-# This is shown to AI when creating artifacts.
-# Add your tech stack, conventions, style guides, domain knowledge, etc.
-# Example:
-#   context: |
-#     Tech stack: TypeScript, React, Node.js
-#     We use conventional commits
-#     Domain: e-commerce platform
+context: |
+  Product: Press Agency, a single-owner editorial pipeline that turns a
+  technical article idea into observable, immutable artifacts. Trusted people
+  may receive access, but multi-tenant and multi-instance scaling are not
+  current goals.
+
+  Stack:
+  - TypeScript ESM on Node.js.
+  - Express API and server-sent events.
+  - Vanilla HTML, CSS, and JavaScript UI in web/.
+  - Zod schemas for all structured domain and model outputs.
+  - OpenAI models through AI SDK; model and output-token budgets are selected
+    per pipeline stage in src/llm/provider.ts.
+  - Vitest tests; use pnpm test and pnpm typecheck for verification.
+
+  Current pipeline:
+  Research -> Planning -> Writing -> editor Draft Review -> Technical Review ->
+  Editorial Review -> Revision -> SEO -> deterministic Publisher.
+  The Draft Review supports approve, reject, and iterate with written feedback.
+  Failed-job retry resumes from the first incomplete stage because completed
+  stages are skipped.
+
+  Domain rules:
+  - Article is the aggregate; do not call it a job or post record.
+  - Draft is the Writer's immutable first complete body.
+  - Technical Review and Editorial Review contain structured findings.
+  - Revised Draft applies or rejects every finding and records a Resolution.
+  - Draft Iteration creates a new immutable Draft; never overwrite an earlier
+    artifact.
+  - SEO and Publisher consume the Revised Draft, not the original Draft.
+  - Agents communicate only through structured outputs; orchestration owns
+    execution and state transitions.
+  - Every meaningful action should remain observable through the event log.
+  - Use the canonical terminology and further definitions in CONTEXT.md.
+
+  Persistence and runtime:
+  - Article metadata, artifacts, final Markdown, and append-only events are
+    stored under articles/<id>/ by ArticleStore.
+  - EventLogger persists JSONL and publishes live events through an in-memory
+    EventBus; the browser consumes them over SSE.
+  - Jobs currently run inside the web process and active job IDs are held in
+    memory. This is acceptable for one process, but restarts can interrupt work.
+  - Initial hosting may use one instance with a persistent volume and tested
+    backups. Introduce Postgres/artifact versions and a durable queue only when
+    the reliability, querying, authorization, or multi-instance triggers in
+    docs/roadmap.md are reached.
+
+  Product priorities, in order:
+  1. Per-stage, per-run, and per-attempt article cost visibility.
+  2. Pass a shared article brief (topic, audience, content type, depth, target
+     length, publication profile) through all relevant agents.
+  3. Clarify failed-stage retry behavior in the UI.
+  4. Add reversible archive and confirmed permanent deletion.
+  5. Improve prompt source discipline, safety, agent contracts, versioning,
+     and evaluation fixtures.
+  6. Add explicit-email access control and durable hosted storage.
+  7. Add versioned reruns and durable background execution when justified.
+  Full sequencing and acceptance criteria live in docs/roadmap.md.
+
+  Engineering conventions:
+  - Preserve user changes and avoid unrelated refactors.
+  - Prefer small vertical changes with schema, storage, API, UI, and tests kept
+    coherent.
+  - Keep Publisher deterministic when validation can replace an LLM call.
+  - Preserve backward-compatible schema defaults for existing Article records.
+  - Use conventional commits.
+  - Follow WRITING-STYLE.md for publication prose.
 
 # Per-artifact rules (optional)
 # Add custom rules for specific artifacts.
