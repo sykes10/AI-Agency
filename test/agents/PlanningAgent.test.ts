@@ -37,7 +37,7 @@ describe("PlanningAgent", () => {
       takeaways: ["takeaway 1"],
       conclusion: "conclusion",
     };
-    generateTextMock.mockResolvedValue({ output: outline });
+    generateTextMock.mockResolvedValue({ output: outline, finishReason: "stop", usage: {} });
 
     const events: AgentEventInput[] = [];
     const result = await agent.run(
@@ -70,7 +70,11 @@ describe("PlanningAgent", () => {
   it("throws if the model output does not match the outline schema", async () => {
     const { PlanningAgent } = await import("../../src/agents/PlanningAgent.js");
     const agent = new PlanningAgent();
-    generateTextMock.mockResolvedValue({ output: { not: "an outline" } });
+    generateTextMock.mockResolvedValue({
+      output: { not: "an outline" },
+      finishReason: "stop",
+      usage: {},
+    });
 
     await expect(
       agent.run(

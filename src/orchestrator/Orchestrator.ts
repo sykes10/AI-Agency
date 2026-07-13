@@ -8,6 +8,7 @@ import { technicalReviewerAgent } from "../agents/TechnicalReviewerAgent.js";
 import { editorialReviewerAgent } from "../agents/EditorialReviewerAgent.js";
 import { seoAgent } from "../agents/SeoAgent.js";
 import { publisher } from "../agents/Publisher.js";
+import { revisionAgent } from "../agents/RevisionAgent.js";
 
 export interface StageDef {
   status: ArticleStatus;
@@ -92,11 +93,35 @@ export function buildPipeline(store: ArticleStore): StageDef[] {
       },
     },
     {
+      status: "Revising",
+      agentName: revisionAgent.name,
+      isDone: (a) => a.revisedDraft !== null,
+      run: async (a, ctx) => {
+        const revisedDraft = await revisionAgent.run(
+          {
+            draft: a.draft!,
+            outline: a.outline!,
+            research: a.research!,
+            technicalReview: a.reviews.technical!,
+            editorialReview: a.reviews.editorial!,
+          },
+          ctx
+        );
+        await store.saveRevisedDraft(a.id, revisedDraft);
+        a.revisedDraft = revisedDraft;
+        await ctx.emit({
+          type: "ArtifactCreated",
+          agent: revisionAgent.name,
+          artifact: "revised_draft",
+        });
+      },
+    },
+    {
       status: "SEOReview",
       agentName: seoAgent.name,
       isDone: (a) => a.seo !== null,
       run: async (a, ctx) => {
-        const seo = await seoAgent.run({ draft: a.draft!, outline: a.outline! }, ctx);
+        const seo = await seoAgent.run({ draft: a.revisedDraft!, outline: a.outline! }, ctx);
         await store.saveSeo(a.id, seo);
         a.seo = seo;
         await ctx.emit({ type: "ArtifactCreated", agent: seoAgent.name, artifact: "seo" });
@@ -108,7 +133,7 @@ export function buildPipeline(store: ArticleStore): StageDef[] {
       isDone: (a) => a.metadata !== null,
       run: async (a, ctx) => {
         const metadata = await publisher.run(
-          { draft: a.draft!, seo: a.seo!, outline: a.outline! },
+          { draft: a.revisedDraft!, seo: a.seo!, outline: a.outline! },
           ctx
         );
         await store.saveMetadata(a.id, metadata);

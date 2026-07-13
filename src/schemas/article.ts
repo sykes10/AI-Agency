@@ -5,6 +5,7 @@ import { DraftSchema } from "./draft.js";
 import { TechnicalReviewSchema, EditorialReviewSchema } from "./reviews.js";
 import { SeoReportSchema } from "./seo.js";
 import { PublishedMetadataSchema } from "./metadata.js";
+import { RevisedDraftSchema } from "./revision.js";
 
 export const ArticleStatusSchema = z.enum([
   "Queued",
@@ -13,6 +14,7 @@ export const ArticleStatusSchema = z.enum([
   "Writing",
   "TechnicalReview",
   "EditorialReview",
+  "Revising",
   "SEOReview",
   "Ready",
   "Published",
@@ -44,6 +46,7 @@ export const ArticleSchema = z.object({
       editorial: EditorialReviewSchema.nullable().default(null),
     })
     .default({ technical: null, editorial: null }),
+  revisedDraft: RevisedDraftSchema.nullable().default(null),
   seo: SeoReportSchema.nullable().default(null),
   metadata: PublishedMetadataSchema.nullable().default(null),
   error: z.string().nullable().default(null),

@@ -16,6 +16,7 @@ import {
 } from "../schemas/reviews.js";
 import { SeoReportSchema, type SeoReport } from "../schemas/seo.js";
 import { PublishedMetadataSchema, type PublishedMetadata } from "../schemas/metadata.js";
+import { RevisedDraftSchema, type RevisedDraft } from "../schemas/revision.js";
 import {
   articleDir,
   articleRecordPath,
@@ -79,15 +80,17 @@ export class ArticleStore {
     const record = (await readJson(articleRecordPath(id))) as ArticleRecord | null;
     if (!record) return null;
 
-    const [research, outline, draft, technical, editorial, seo, metadata] = await Promise.all([
-      readJson(stagePath(id, "research")),
-      readJson(stagePath(id, "outline")),
-      readJson(stagePath(id, "draft")),
-      readJson(stagePath(id, "reviews_technical")),
-      readJson(stagePath(id, "reviews_editorial")),
-      readJson(stagePath(id, "seo")),
-      readJson(stagePath(id, "metadata")),
-    ]);
+    const [research, outline, draft, technical, editorial, revisedDraft, seo, metadata] =
+      await Promise.all([
+        readJson(stagePath(id, "research")),
+        readJson(stagePath(id, "outline")),
+        readJson(stagePath(id, "draft")),
+        readJson(stagePath(id, "reviews_technical")),
+        readJson(stagePath(id, "reviews_editorial")),
+        readJson(stagePath(id, "revised_draft")),
+        readJson(stagePath(id, "seo")),
+        readJson(stagePath(id, "metadata")),
+      ]);
 
     const article: Article = ArticleSchema.parse({
       ...record,
@@ -98,6 +101,7 @@ export class ArticleStore {
         technical: technical ? TechnicalReviewSchema.parse(technical) : null,
         editorial: editorial ? EditorialReviewSchema.parse(editorial) : null,
       },
+      revisedDraft: revisedDraft ? RevisedDraftSchema.parse(revisedDraft) : null,
       seo: seo ? SeoReportSchema.parse(seo) : null,
       metadata: metadata ? PublishedMetadataSchema.parse(metadata) : null,
     });
@@ -168,6 +172,10 @@ export class ArticleStore {
     await writeJson(stagePath(id, "reviews_editorial"), value);
   }
 
+  async saveRevisedDraft(id: string, value: RevisedDraft): Promise<void> {
+    await writeJson(stagePath(id, "revised_draft"), value);
+  }
+
   async saveSeo(id: string, value: SeoReport): Promise<void> {
     await writeJson(stagePath(id, "seo"), value);
   }
@@ -178,7 +186,14 @@ export class ArticleStore {
   }
 
   async readArtifact(id: string, stage: string): Promise<unknown | null> {
-    const fileStage = stage === "technical" ? "reviews_technical" : stage === "editorial" ? "reviews_editorial" : stage;
+    const fileStage =
+      stage === "technical"
+        ? "reviews_technical"
+        : stage === "editorial"
+          ? "reviews_editorial"
+          : stage === "revised-draft"
+            ? "revised_draft"
+            : stage;
     return readJson(stagePath(id, fileStage));
   }
 }

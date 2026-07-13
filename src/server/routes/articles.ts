@@ -13,6 +13,7 @@ const ArtifactStageSchema = z.enum([
   "draft",
   "technical",
   "editorial",
+  "revised-draft",
   "seo",
   "metadata",
 ]);

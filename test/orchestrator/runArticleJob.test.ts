@@ -8,6 +8,7 @@ const planningRunMock = vi.fn();
 const writingRunMock = vi.fn();
 const technicalRunMock = vi.fn();
 const editorialRunMock = vi.fn();
+const revisionRunMock = vi.fn();
 const seoRunMock = vi.fn();
 const publisherRunMock = vi.fn();
 
@@ -25,6 +26,9 @@ vi.mock("../../src/agents/TechnicalReviewerAgent.js", () => ({
 }));
 vi.mock("../../src/agents/EditorialReviewerAgent.js", () => ({
   editorialReviewerAgent: { name: "editorial-review", run: editorialRunMock },
+}));
+vi.mock("../../src/agents/RevisionAgent.js", () => ({
+  revisionAgent: { name: "revision", run: revisionRunMock },
 }));
 vi.mock("../../src/agents/SeoAgent.js", () => ({
   seoAgent: { name: "seo", run: seoRunMock },
@@ -57,6 +61,7 @@ const OUTLINE = {
 const DRAFT = { title: "Title", subtitle: "Sub", body: "word ".repeat(50) };
 const TECH_REVIEW = { issues: [] };
 const EDIT_REVIEW = { suggestions: [] };
+const REVISED_DRAFT = { ...DRAFT, body: "revised body", resolutions: [] };
 const SEO = {
   slug: "slug",
   metaTitle: "meta",
@@ -91,6 +96,7 @@ describe("runArticleJob", () => {
     writingRunMock.mockResolvedValue(DRAFT);
     technicalRunMock.mockResolvedValue(TECH_REVIEW);
     editorialRunMock.mockResolvedValue(EDIT_REVIEW);
+    revisionRunMock.mockResolvedValue(REVISED_DRAFT);
     seoRunMock.mockResolvedValue(SEO);
     publisherRunMock.mockResolvedValue({
       markdown: "# Title",
@@ -112,6 +118,15 @@ describe("runArticleJob", () => {
     expect(article?.status).toBe("Published");
     expect(article?.title).toBe("Title");
     expect(researchRunMock).toHaveBeenCalledTimes(1);
+    expect(revisionRunMock).toHaveBeenCalledTimes(1);
+    expect(seoRunMock).toHaveBeenCalledWith(
+      { draft: REVISED_DRAFT, outline: OUTLINE },
+      expect.anything()
+    );
+    expect(publisherRunMock).toHaveBeenCalledWith(
+      { draft: REVISED_DRAFT, seo: SEO, outline: OUTLINE },
+      expect.anything()
+    );
     expect(publisherRunMock).toHaveBeenCalledTimes(1);
 
     const { eventLogger } = await import("../../src/events/EventLogger.js");
@@ -123,6 +138,7 @@ describe("runArticleJob", () => {
       "Writing",
       "TechnicalReview",
       "EditorialReview",
+      "Revising",
       "SEOReview",
       "Ready",
       "Published",
@@ -156,6 +172,7 @@ describe("runArticleJob", () => {
     writingRunMock.mockResolvedValue(DRAFT);
     technicalRunMock.mockResolvedValue(TECH_REVIEW);
     editorialRunMock.mockResolvedValue(EDIT_REVIEW);
+    revisionRunMock.mockResolvedValue(REVISED_DRAFT);
     seoRunMock.mockResolvedValue(SEO);
     publisherRunMock.mockResolvedValue({
       markdown: "# Title",

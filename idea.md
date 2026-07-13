@@ -50,6 +50,10 @@ Editorial Review
 
 ↓
 
+Revision
+
+↓
+
 SEO Review
 
 ↓
@@ -315,7 +319,25 @@ Annotated suggestions.
 
 ---
 
-## 6. SEO Agent
+## 6. Revision Agent
+
+### Goal
+
+Apply the Technical Review and Editorial Review to the Draft in one revision pass.
+
+### Responsibilities
+
+* produce an immutable Revised Draft
+* resolve every review finding exactly once
+* apply findings that improve correctness or readability
+* reject incorrect or conflicting findings with a recorded reason
+* preserve the original Draft for replay and comparison
+
+SEO and Publisher consume the Revised Draft, never the original Draft.
+
+---
+
+## 7. SEO Agent
 
 ### Goal
 
@@ -336,7 +358,7 @@ SEO is never allowed to change technical correctness.
 
 ---
 
-## 7. Publisher
+## 8. Publisher
 
 ### Goal
 
@@ -381,6 +403,8 @@ draft
 
 reviews
 
+revisedDraft
+
 seo
 
 metadata
@@ -412,6 +436,10 @@ Technical Review
 ↓
 
 Editorial Review
+
+↓
+
+Revising
 
 ↓
 
@@ -585,7 +613,7 @@ Replace the structured `{topic, audience, depth}` intake with a free-text idea, 
 * `runArticleJob` stops at `AwaitingApproval` instead of running straight through to publish.
 * `POST /articles/:id/approve` resumes the job to run the publish step.
 * `POST /articles/:id/reject` sets a terminal `Rejected` status. No PR is created.
-* `POST /articles/:id/iterate` takes feedback text, re-runs from the relevant stage (likely Writing) with the feedback appended as input, clears downstream artifacts (`draft`, `reviews`, `seo`), and returns to `AwaitingApproval`.
+* `POST /articles/:id/iterate` takes feedback text, re-runs from the relevant stage (likely Writing) with the feedback appended as input, clears downstream artifacts (`draft`, `reviews`, `revisedDraft`, `seo`), and returns to `AwaitingApproval`.
 
 ### Publish Step (revised)
 
@@ -670,6 +698,7 @@ The first release should include only:
 * Writing Agent
 * Technical Reviewer
 * Editorial Reviewer
+* Revision Agent
 * SEO Agent
 * Markdown Publisher
 * Event logging

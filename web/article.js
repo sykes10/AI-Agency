@@ -123,7 +123,9 @@ function watchArticle() {
       updateRetryVisibility(event.to);
     }
     if (event.type === "ArtifactCreated" && event.artifact) {
-      const stageKey = event.artifact.replace(/^reviews_/, "");
+      const stageKey = event.artifact
+        .replace(/^reviews_/, "")
+        .replace("revised_draft", "revised-draft");
       if (stageKey === state.activeStage) loadStage(stageKey);
     }
     if (event.type === "Completed" || event.type === "Failed") {

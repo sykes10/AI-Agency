@@ -7,6 +7,7 @@ const ORDER: ArticleStatus[] = [
   "Writing",
   "TechnicalReview",
   "EditorialReview",
+  "Revising",
   "SEOReview",
   "Ready",
   "Published",
